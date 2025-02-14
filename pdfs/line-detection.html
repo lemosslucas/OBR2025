@@ -7312,7 +7312,6 @@ a.anchor-link {
                     processEnvironments: true
                 },
                 displayAlign: 'center',
-                messageStyle: 'none',
                 CommonHTML: {
                     linebreaks: {
                     automatic: true
@@ -7530,9 +7529,9 @@ a.anchor-link {
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Import libraries</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">cv2</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">cv2</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 </pre></div>
 </div>
 </div>
@@ -7849,7 +7848,7 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">calculate_error</span><span class="p">(</span><span class="n">target_line</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">calculate_error</span><span class="p">(</span><span class="n">target_line</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Calculates the error between the target line position and the car flow line position.</span>
 
@@ -7907,7 +7906,7 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">draw_line</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">draw_line</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Draws two vertical lines on the image representing the car flow boundaries.</span>
 
@@ -7951,10 +7950,10 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [108]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [89]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">identify_colour</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">identify_colour</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Identifies the dominant color in an image based on predefined HSV ranges.</span>
 
@@ -7998,10 +7997,29 @@ a.anchor-link {
         <span class="k">if</span> <span class="n">contours</span><span class="p">:</span>
             <span class="c1"># drawn the contours in black colour</span>
             <span class="n">cv2</span><span class="o">.</span><span class="n">drawContours</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">contours</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
-                
+
     <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">detected_areas</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">dominant_color</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">detected_areas</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">detected_areas</span><span class="o">.</span><span class="n">get</span><span class="p">)</span> 
+        
+        <span class="k">if</span> <span class="n">dominant_color</span> <span class="o">==</span> <span class="s1">'green'</span><span class="p">:</span>
+            <span class="c1"># split the image in two sides</span>
+            <span class="n">mid</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span>
+            
+            <span class="c1"># create a green mask </span>
+            <span class="n">green_mask</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">inRange</span><span class="p">(</span><span class="n">hsv_img</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">)</span> <span class="k">for</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span> <span class="ow">in</span> <span class="n">color_ranges</span><span class="p">[</span><span class="s1">'green'</span><span class="p">])</span>
+            
+            <span class="c1"># calculate moments of image</span>
+            <span class="n">moments</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">moments</span><span class="p">(</span><span class="n">green_mask</span><span class="p">)</span>
+            
+            <span class="c1"># find the center of object</span>
+            <span class="n">cX</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">moments</span><span class="p">[</span><span class="s2">"m10"</span><span class="p">]</span> <span class="o">/</span> <span class="n">moments</span><span class="p">[</span><span class="s2">"m00"</span><span class="p">])</span>
+            
+            <span class="c1"># find the side</span>
+            <span class="n">side</span> <span class="o">=</span> <span class="s1">'on left'</span> <span class="k">if</span> <span class="n">cX</span> <span class="o">&lt;</span> <span class="n">mid</span> <span class="k">else</span> <span class="s1">'on right'</span>
+            <span class="n">dominant_color</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">dominant_color</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">side</span><span class="si">}</span><span class="s1">'</span>
+                
         <span class="c1"># return the colour with most area on the image</span>
-        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">detected_areas</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">detected_areas</span><span class="o">.</span><span class="n">get</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dominant_color</span>
     <span class="c1"># return none if not has colour in the image</span>
     <span class="k">return</span> <span class="kc">None</span>
 </pre></div>
@@ -8014,58 +8032,46 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [136]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [90]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">verify_curve</span><span class="p">(</span><span class="n">contours</span><span class="p">,</span> <span class="n">img_widht</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">verify_curve</span><span class="p">(</span><span class="n">contours</span><span class="p">,</span> <span class="n">img_width</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Verify if has a curve on the image</span>
-<span class="sd">    </span>
-<span class="sd">    Args: </span>
-<span class="sd">        contours </span>
+<span class="sd">    Checks if there is a curve in the image and identifies its direction.</span>
 
-<span class="sd">    Return:</span>
-<span class="sd">        string: "side of curve"</span>
+<span class="sd">    The function analyzes the detected contours and verifies the distribution </span>
+<span class="sd">    of points relative to the center of the image. If most points are on the </span>
+<span class="sd">    left side, the curve is classified as "Left"; if they are on the right side, </span>
+<span class="sd">    it is classified as "Right". Otherwise, it returns "No curve".</span>
+
+<span class="sd">    Additionally, if the number of points in the contour is too large (&gt;= 8), </span>
+<span class="sd">    it is assumed that the shape is not a sharp curve.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        contours (list): List of detected contours in the image.</span>
+<span class="sd">        img_width (int): Width of the image, used to determine the center.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: "Left" if the curve is on the left, "Right" if it is on the right, </span>
+<span class="sd">             or "No curve" if no significant curve is detected.</span>
 <span class="sd">    """</span>
-    <span class="n">vertical</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">horizontal</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">for</span> <span class="n">contour</span> <span class="ow">in</span> <span class="n">contours</span><span class="p">:</span>
-        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">boundingRect</span><span class="p">(</span><span class="n">contour</span><span class="p">)</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">contour</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="n">h</span> <span class="o">&gt;</span> <span class="n">w</span><span class="p">:</span>
-            <span class="n">vertical</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">horizontal</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="c1"># Divide a imagem ao meio</span>
+        <span class="n">mid</span> <span class="o">=</span> <span class="n">img_width</span> <span class="o">//</span> <span class="mi">2</span>
+        <span class="n">points_left</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">X</span> <span class="o">&lt;</span> <span class="n">mid</span><span class="p">)</span>
+        <span class="n">points_right</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">X</span> <span class="o">&gt;=</span> <span class="n">mid</span><span class="p">)</span>
 
-    <span class="c1"># if not has curve</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">vertical</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">horizontal</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s1">'No curve'</span>
-        
-    <span class="c1"># if horizontal is bigger</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">horizontal</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">vertical</span><span class="p">):</span>
-        <span class="c1"># divide in int number</span>
-        <span class="n">mid</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">contours</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
-
-        <span class="n">left</span> <span class="o">=</span> <span class="p">[</span><span class="n">cv2</span><span class="o">.</span><span class="n">boundingRect</span><span class="p">(</span><span class="n">contour</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">contour</span> <span class="ow">in</span> <span class="n">contours</span><span class="p">[:</span><span class="n">mid</span><span class="p">]]</span>
-        <span class="n">right</span> <span class="o">=</span> <span class="p">[</span><span class="n">cv2</span><span class="o">.</span><span class="n">boundingRect</span><span class="p">(</span><span class="n">contour</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">contour</span> <span class="ow">in</span> <span class="n">contours</span><span class="p">[</span><span class="n">mid</span><span class="p">:]]</span>
-
-        <span class="c1"># calcule the avarege</span>
-        <span class="n">average_left</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">left</span><span class="p">)</span> <span class="k">if</span> <span class="n">left</span> <span class="k">else</span> <span class="mi">0</span>
-        <span class="n">average_right</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">right</span><span class="p">)</span> <span class="k">if</span> <span class="n">right</span> <span class="k">else</span> <span class="n">img_widht</span>
-
-        <span class="nb">print</span><span class="p">(</span><span class="n">average_left</span><span class="p">,</span> <span class="n">average_right</span><span class="p">)</span>
-        
-        <span class="c1"># define if is left or right</span>
-        <span class="k">if</span> <span class="n">average_left</span> <span class="o">&gt;</span> <span class="n">average_right</span><span class="p">:</span> 
-            <span class="k">return</span> <span class="s1">'Left'</span>
-        <span class="k">elif</span> <span class="n">average_left</span> <span class="o">&lt;</span> <span class="n">average_right</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s1">'Right'</span>
-        <span class="c1"># if not identify the side</span>
-        <span class="k">return</span> <span class="s1">'Green square'</span>
-    
-    <span class="c1"># if not work</span>
-    <span class="k">return</span> <span class="kc">None</span>
+        <span class="c1"># if contour &gt; 8 probabily it's not a curve 90</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">contour</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">:</span>  
+            <span class="k">if</span> <span class="n">points_left</span> <span class="o">&gt;</span> <span class="n">points_right</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s1">'Left'</span>
+            <span class="k">elif</span> <span class="n">points_left</span> <span class="o">&lt;</span> <span class="n">points_right</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s1">'Right'</span>
+    <span class="c1"># return no curve</span>
+    <span class="k">return</span> <span class="s1">'No curve'</span>
 </pre></div>
 </div>
 </div>
@@ -8076,10 +8082,10 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [137]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [91]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">detect_line</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">detect_line</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Detects lines in the given image using edge detection and Hough Transform, </span>
 <span class="sd">    draws the detected lines, and calculates the error between the detected lines </span>
@@ -8112,9 +8118,6 @@ a.anchor-link {
         <span class="c1">#lines = cv2.HoughLinesP(edges, 1, np.pi/180, 70, minLineLength=20, maxLineGap=255)</span>
         <span class="n">contours</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">findContours</span><span class="p">(</span><span class="n">binary</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">RETR_EXTERNAL</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">CHAIN_APPROX_SIMPLE</span><span class="p">)</span>
     
-        <span class="c1"># send img_widht as img.shape[1]</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">verify_curve</span><span class="p">(</span><span class="n">contours</span><span class="p">,</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
-
         <span class="c1"># verify if has a symbol on the img</span>
         <span class="n">cor_detected</span> <span class="o">=</span> <span class="n">identify_colour</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">cor_detected</span><span class="p">:</span>
@@ -8130,10 +8133,23 @@ a.anchor-link {
             
             <span class="c1">#draw the car flow line</span>
             <span class="n">flow_line</span> <span class="o">=</span> <span class="n">draw_line</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
-        
+
+            <span class="c1"># send img_widht as img.shape[1]</span>
+            <span class="n">is_curve</span> <span class="o">=</span> <span class="n">verify_curve</span><span class="p">(</span><span class="n">contours</span><span class="p">,</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            
             <span class="c1"># calculate the error</span>
             <span class="n">erro</span> <span class="o">=</span> <span class="n">calculate_error</span><span class="p">(</span><span class="n">contours</span><span class="p">)</span>
-        
+                
+            <span class="c1"># to avoid false-positive</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">erro</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">erro</span> <span class="o">&lt;=</span> <span class="mi">10</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">erro</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="mi">10</span> <span class="ow">and</span> <span class="n">erro</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="n">is_curve</span> <span class="o">=</span> <span class="s1">'No Curve'</span><span class="p">;</span>
+            
+            <span class="nb">print</span><span class="p">(</span><span class="n">is_curve</span><span class="p">)</span>
+            <span class="c1"># to avoid false-positive</span>
+            <span class="k">if</span> <span class="n">cor_detected</span><span class="p">:</span>
+                <span class="n">erro</span> <span class="o">=</span> <span class="mi">0</span>
+                
+            <span class="c1"># return the erro</span>
             <span class="k">return</span> <span class="n">erro</span>
     <span class="k">return</span> <span class="kc">None</span>
 </pre></div>
@@ -8146,7 +8162,7 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [138]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [92]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s1">'datas/ladrinho3_reto.jpg'</span><span class="p">)</span>
@@ -8183,7 +8199,7 @@ The error in degrees: 0
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [139]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [93]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s1">'datas/ladrinho3_esquerda.jpg'</span><span class="p">)</span>
@@ -8202,7 +8218,7 @@ The error in degrees: 0
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>No curve
+<pre>No Curve
 The error in degrees: -10
 </pre>
 </div>
@@ -8220,7 +8236,7 @@ The error in degrees: -10
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [140]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [94]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s1">'datas/ladrinho3_direita.jpg'</span><span class="p">)</span>
@@ -8239,7 +8255,7 @@ The error in degrees: -10
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>No curve
+<pre>No Curve
 The error in degrees: 9
 </pre>
 </div>
@@ -8257,7 +8273,7 @@ The error in degrees: 9
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [141]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [95]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s1">'datas/ladrinho1_esquerda.jpg'</span><span class="p">)</span>
@@ -8276,7 +8292,7 @@ The error in degrees: 9
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>No curve
+<pre>Left
 The error in degrees: -40
 </pre>
 </div>
@@ -8294,7 +8310,7 @@ The error in degrees: -40
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [142]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [96]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s1">'datas/ladrinho1_direita.jpg'</span><span class="p">)</span>
@@ -8313,8 +8329,7 @@ The error in degrees: -40
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>0 217.0
-Right
+<pre>Right
 The error in degrees: 0
 </pre>
 </div>
@@ -8332,7 +8347,7 @@ The error in degrees: 0
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [143]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [97]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s1">'datas/ladrinho5.jpg'</span><span class="p">)</span>
@@ -8369,7 +8384,7 @@ The error in degrees: 0
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [144]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [98]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s1">'datas/ladrinho2_esquerda.jpg'</span><span class="p">)</span>
@@ -8406,7 +8421,7 @@ The error in degrees: -40
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [145]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [99]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s1">'datas/ladrinho2_direita.jpg'</span><span class="p">)</span>
@@ -8425,8 +8440,7 @@ The error in degrees: -40
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>0 211.0
-Right
+<pre>No curve
 The error in degrees: 44
 </pre>
 </div>
@@ -8444,7 +8458,7 @@ The error in degrees: 44
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [146]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [100]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s1">'datas/ladrilho_verde.jpg'</span><span class="p">)</span>
@@ -8463,10 +8477,9 @@ The error in degrees: 44
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>0 0.0
-Green square
-Has the colour green on the image
-The error in degrees: -40
+<pre>Has the colour green on right on the image
+No curve
+The error in degrees: 0
 </pre>
 </div>
 </div>
@@ -8483,12 +8496,12 @@ The error in degrees: -40
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [147]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [101]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s1">'datas/ladrilho_vermelho.jpg'</span><span class="p">)</span>
 <span class="n">erro</span> <span class="o">=</span> <span class="n">detect_line</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2RGB</span><span class="p">));</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2RGB</span><span class="p">))</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">'The error in degrees:'</span><span class="p">,</span> <span class="n">erro</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -8502,8 +8515,8 @@ The error in degrees: -40
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>No curve
-Has the colour red on the image
+<pre>Has the colour red on the image
+No curve
 The error in degrees: 0
 </pre>
 </div>
@@ -8521,7 +8534,7 @@ The error in degrees: 0
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [148]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [102]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s1">'datas/ladrilho_cinza.jpg'</span><span class="p">)</span>
@@ -8540,8 +8553,8 @@ The error in degrees: 0
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>No curve
-Has the colour gray on the image
+<pre>Has the colour gray on the image
+No curve
 The error in degrees: 0
 </pre>
 </div>
@@ -8550,44 +8563,6 @@ The error in degrees: 0
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedImage jp-OutputArea-output" tabindex="0">
 <img alt="No description has been provided for this image" class="" src="data:image/png;base64,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"/>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=17758777-a6a7-4a88-b72e-ca08e701b0d6">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [149]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s1">'datas/ladrinho6.jpg'</span><span class="p">)</span>
-<span class="n">erro</span> <span class="o">=</span> <span class="n">detect_line</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">img</span><span class="p">);</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">'The error in degrees:'</span><span class="p">,</span> <span class="n">erro</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>0 0.0
-Green square
-The error in degrees: -40
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedImage jp-OutputArea-output" tabindex="0">
-<img alt="No description has been provided for this image" class="" src="data:image/png;base64,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"/>
 </div>
 </div>
 </div>
