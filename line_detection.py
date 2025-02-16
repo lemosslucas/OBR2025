@@ -2,6 +2,8 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import psutil
+import os
 
 def calculate_error(target_line):
     """
@@ -29,25 +31,17 @@ def calculate_error(target_line):
     x1, y1 = tuple(contour[np.argmin(contour[:, 1])])  # few value of Y (top)
     x2, y2 = tuple(contour[np.argmax(contour[:, 1])])  # bigger value of Y (base)
     
-
     # calculate angle em rad
     theta_rad = np.arctan2(y2 - y1, x2 - x1)
 
     # convert to degree
     theta_deg = np.degrees(theta_rad)
-
-    # to debug
-    #print(theta_deg)
     
     # assure the degres in [0, 180]
-    if theta_deg < 0:
-        theta_deg += 180
+    theta_deg = theta_deg + 180 if theta_deg < 0 else theta_deg
     
-    # calculate the error
-    error = theta_deg - 90
-
     # return the erro in degree (for less use of memory)
-    return int(error)
+    return int(theta_deg - 90)
 
 def draw_line(img):
     """
@@ -55,34 +49,22 @@ def draw_line(img):
 
     Args:
         img (numpy.ndarray): The input image on which the lines will be drawn.
-
-    Returns:
-        tuple: A tuple (left, right) representing the X-coordinates of the left and right 
-               boundaries of the car flow line.
     """
     # determine the size of the line
-    line_thickness = 32
+    thickness, line_thickness = 3, 32
     
     # extract the img size
     y, x, _ = img.shape
     
     # determine the position of car flow line in relation of x label
     car_flow_x = int((x - line_thickness) / 2)
-    start_point1 = (car_flow_x, 0)
-    end_point1 = (car_flow_x, y)
-    
-    thickness = 3
-    color=(0, 255, 0)
-    # drawn the line 1
-    cv2.line(img, start_point1, end_point1, color, thickness)
-    
-    start_point2 = (car_flow_x + line_thickness, 0)
-    end_point2 = (car_flow_x + line_thickness, y)
-    # drawn the line 2
-    cv2.line(img, start_point2, end_point2, color, thickness)
 
-    # return the position in format (left, right)
-    return (car_flow_x, car_flow_x+line_thickness)
+    # drawn the line 1
+    cv2.line(img, (car_flow_x, 0), (car_flow_x, y), (0, 255, 0), thickness)
+
+    # drawn the line 2
+    cv2.line(img, (car_flow_x + line_thickness, 0), (car_flow_x + line_thickness, y), (0, 255, 0), thickness)
+
 
 def identify_colour(img):
     """
@@ -175,20 +157,21 @@ def verify_curve(contours, img_width):
              or "No curve" if no significant curve is detected.
     """
 
+    # Split the image in 2
+    mid = img_width // 2
+
     for contour in contours:
         X = contour[:, 0, 0]
 
-        # Divide a imagem ao meio
-        mid = img_width // 2
-        points_left = np.sum(X < mid)
-        points_right = np.sum(X >= mid)
+        points_left, points_right = np.sum(X < mid), np.sum(X >= mid)
 
         # if contour > 8 probabily it's not a curve 90
         if len(contour) < 8:  
             if points_left > points_right:
                 return 'Left'
-            elif points_left < points_right:
+            if points_left < points_right:
                 return 'Right'
+
     # return no curve
     return 'No curve'
 
@@ -218,11 +201,7 @@ def detect_line(img):
         binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
         binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
     
-        # find the edges on the image
-        edges = cv2.Canny(binary, 50, 200)
-        
         # Detect points that form a line
-        #lines = cv2.HoughLinesP(edges, 1, np.pi/180, 70, minLineLength=20, maxLineGap=255)
         contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
         # verify if has a symbol on the img
@@ -230,10 +209,6 @@ def detect_line(img):
         if cor_detected:
             print(f'Has the colour {cor_detected} on the image')
         
-        # to debug
-        #plt.imshow(binary, cmap='gray')  
-        #plt.show()
-    
         if contours is not None:
             # drawn the line target
             cv2.drawContours(img, contours, -1, (255, 0, 0), 2)
@@ -248,26 +223,22 @@ def detect_line(img):
             erro = calculate_error(contours)
                 
             # to avoid false-positive
-            if (erro > 0 and erro <= 10) or (erro >= -10 and erro < 0):
-                is_curve = 'No Curve'
+            if (erro > 0 and erro <= 10) or (erro >= -10 and erro < 0): is_curve = 'No curve'
             
             print(is_curve)
             # to avoid false-positive
-            if cor_detected:
-                erro = 0
+            if cor_detected or is_curve != 'No curve': return 0
                 
             # return the erro
             return erro
+            
     return None
-    
-img = cv2.imread('datas/ladrinho3_reto.jpg')
-erro = detect_line(img)
-#plt.imshow(img);
-print('The error in degrees:', erro)
 
-# Calculate the usage of memory
-import psutil
-import os
 
-process = psutil.Process(os.getpid())
-print(f"Memória usada: {process.memory_info().rss / (1024 ** 2)} MB")
+if __name__ == '__main__':
+    img = cv2.imread('datas/ladrinho3_direita.jpg')
+    erro = detect_line(img)
+    #plt.imshow(img)
+    print('The error in degrees:', erro)
+
+    print(f"Memory used: {psutil.Process(os.getpid()).memory_info().rss / (1024 ** 2)} MB")
