@@ -173,7 +173,7 @@ def verify_curve(contours, img_width):
                 return 'Right'
 
     # return no curve
-    return 'No curve'
+    return False
 
 def detect_line(img):
     """
@@ -223,22 +223,37 @@ def detect_line(img):
             erro = calculate_error(contours)
                 
             # to avoid false-positive
-            if (erro > 0 and erro <= 10) or (erro >= -10 and erro < 0): is_curve = 'No curve'
+            if (erro > 0 and erro <= 10) or (erro >= -10 and erro < 0): is_curve = False
             
-            print(is_curve)
             # to avoid false-positive
-            if cor_detected or is_curve != 'No curve': return 0
+            if cor_detected or is_curve != False: return [0, is_curve]
                 
-            # return the erro
-            return erro
+            # return the erro and is_curve
+            print(erro, is_curve)
+            return [erro, is_curve]
             
     return None
 
+def download_image(erro, path, image_name, is_curve=False):
+    plt.title(f'Erro = {erro}°, Is curve = {is_curve}')
+    plt.imshow(img)
+
+    plt.savefig(f"{path}/analised/{image_name}-analised.jpg")
 
 if __name__ == '__main__':
-    img = cv2.imread('datas/ladrinho3_direita.jpg')
-    erro = detect_line(img)
-    #plt.imshow(img)
-    print('The error in degrees:', erro)
+    path = 'datas/lines/'
+    images = [f for f in os.listdir(path) if f.endswith('.jpg')]
+    
+    # for a specified file
+    #images = []"datas/lines/ladrilho_verde.jpg"]
+    
+    for image_name in images:
+        print(path + image_name)
+        img = cv2.imread(path + image_name)
+        erro, is_curve = detect_line(img)
 
-    print(f"Memory used: {psutil.Process(os.getpid()).memory_info().rss / (1024 ** 2)} MB")
+        image_name, type_file = image_name.split('.jpg')
+        download_image(erro, path, image_name, is_curve)
+        #print('The error in degrees:', erro)
+        print(f"Memory used: {psutil.Process(os.getpid()).memory_info().rss / (1024 ** 2)} MB")
+        print('-'*35)
