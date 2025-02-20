@@ -211,7 +211,7 @@ def detect_line(img):
         
         if contours is not None:
             # drawn the line target
-            cv2.drawContours(img, contours, -1, (255, 0, 0), 2)
+            cv2.drawContours(img, contours, -1, (0, 0, 255), 2)
             
             #draw the car flow line
             draw_line(img)
@@ -236,7 +236,7 @@ def detect_line(img):
 
 def download_image(erro, path, image_name, is_curve=False):
     plt.title(f'Erro = {erro}°, Is curve = {is_curve}')
-    plt.imshow(img)
+    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
     plt.savefig(f"{path}/analised/{image_name}-analised.jpg")
 
