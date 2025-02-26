@@ -234,7 +234,7 @@ def detect_line(img):
             
     return None
 
-def download_image(erro, path, image_name, is_curve=False):
+def download_image(img, erro, path, image_name, is_curve=False):
     plt.title(f'Erro = {erro}°, Is curve = {is_curve}')
     plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
