@@ -65,7 +65,6 @@ def draw_line(img):
     # drawn the line 2
     cv2.line(img, (car_flow_x + line_thickness, 0), (car_flow_x + line_thickness, y), (0, 255, 0), thickness)
 
-
 def identify_colour(img):
     """
     Identifies the dominant color in an image based on predefined HSV ranges.
@@ -185,7 +184,10 @@ def detect_line(img):
         img (numpy.ndarray): Input image, which should be in BGR format.
 
     Returns:
-        float: The calculated error between the detected lines and the flow line.
+        tuple: A tuple containing:
+            - erro (int) - The erro beetwen the car and line
+            - is_curve (int) - The side has a curve
+            - has_colour (int) - The colour on the image
     """
 
     # verify if img exists
@@ -226,11 +228,11 @@ def detect_line(img):
             if (erro > 0 and erro <= 10) or (erro >= -10 and erro < 0): is_curve = False
             
             # to avoid false-positive
-            if cor_detected or is_curve != False: return [0, is_curve]
+            if cor_detected or is_curve != False: return 0, is_curve, cor_detected
                 
             # return the erro and is_curve
             print(erro, is_curve)
-            return [erro, is_curve]
+            return erro, is_curve, cor_detected
             
     return None
 
