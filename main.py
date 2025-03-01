@@ -1,45 +1,13 @@
 import cv2 
 from line_detection import *
 from ball_detection import *
+import ctypes 
 
-def calculate_PID(erro, previous_erro, Kp, Kd, Ki):
-    """
-    Computes the PID control output based on the given error values and PID constants.
-
-    The PID control formula is:
-        PID = (Kp * P) + (Ki * I) + (Kd * D)
-    
-    where:
-        - P (Proportional) is the current error.
-        - I (Integral) accumulates past errors, clamped between -255 and 255.
-        - D (Derivative) is the rate of change of the error.
-
-    Parameters:
-        error (int): The current error value.
-        previous_error (int): The error from the previous iteration.
-        Kp (int): The proportional gain constant.
-        Kd (int): The derivative gain constant.
-        Ki (int): The integral gain constant.
-
-    Returns:
-        tuple: A tuple containing:
-            - PID (int): The computed PID output.
-            - previous_erro (int): The updated previous error.
-    """
-    # define param values
-    PID = 0; I = 0; P = erro
-    # limit the I on -255:255
-    I = max(-255, min(I + P, 255))
-    D = erro - previous_erro
-
-    # calculate the PID
-    PID = (Kp * P) + (Ki * I) + (Kd * D)
-
-    # update the value of erro
-    previous_erro = erro
-    
-    # return PID, previous_erro
-    return PID, previous_erro
+# load C files
+PID_functions = ctypes.CDLL("./c_files/PID.dll")
+# Define arguments and returns of function
+PID_functions.calculate_PID.argtypes = (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int)
+PID_functions.calculate_PID.restype = ctypes.c_int
 
 def adjust_move(PID):
     """
@@ -63,7 +31,7 @@ def adjust_move(PID):
     left_velocity = max(0, min(base_left_velocity + PID, 255))
 
     # update the vel of the car
-    #run(right_velocity, left_velocity)
+    #motors_functions.run(right_velocity, left_velocity)
 
 def rescue_area():
     """
@@ -100,7 +68,8 @@ def main():
             ... 
         
     # calculate PID
-    PID, previous_erro = calculate_PID(erro, previous_erro, Kp, Kd, Ki)
+    PID = PID_functions.calculate_PID(erro, previous_erro, Kp, Kd, Ki)
+    previous_erro = erro
 
     # adjust move the car
     adjust_move(PID)
