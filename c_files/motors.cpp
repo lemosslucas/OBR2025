@@ -20,6 +20,23 @@ void setup_motor() {
 }
 
 /**
+ * @brief Sets the state of the motors.
+ *
+ * Controls the direction of each motor.
+ *
+ * @param leftCw LEFT motor clockwise state (HIGH/LOW).
+ * @param leftCcw LEFT motor counterclockwise state (HIGH/LOW).
+ * @param rightCw RIGHT motor clockwise state (HIGH/LOW).
+ * @param rightCcw RIGHT motor counterclockwise state (HIGH/LOW).
+ */
+void set_state_motor(int leftCw, int leftCcw, int rightCw, int rightCcw) {
+    digitalWrite(MOTOR_LEFT_ANTI, leftCcw);
+    digitalWrite(MOTOR_LEFT_CLKWISE, leftCw);
+    digitalWrite(MOTOR_RIGHT_ANTI, rightCcw);
+    digitalWrite(MOTOR_RIGHT_CLKWISE, rightCw);
+}
+
+/**
  * @brief Moves the vehicle forward at the specified speeds.
  *
  * @param velocityRight Speed of the RIGHT motor (0 to 255).
@@ -39,23 +56,6 @@ void run(int velocityRight, int velocityLeft) {
 void stop_motor() {
     // set motor states
     set_state_motor(LOW, LOW, LOW, LOW);
-}
-
-/**
- * @brief Sets the state of the motors.
- *
- * Controls the direction of each motor.
- *
- * @param leftCw LEFT motor clockwise state (HIGH/LOW).
- * @param leftCcw LEFT motor counterclockwise state (HIGH/LOW).
- * @param rightCw RIGHT motor clockwise state (HIGH/LOW).
- * @param rightCcw RIGHT motor counterclockwise state (HIGH/LOW).
- */
-void set_state_motor(int leftCw, int leftCcw, int rightCw, int rightCcw) {
-    digitalWrite(MOTOR_LEFT_ANTI, leftCcw);
-    digitalWrite(MOTOR_LEFT_CLKWISE, leftCw);
-    digitalWrite(MOTOR_RIGHT_ANTI, rightCcw);
-    digitalWrite(MOTOR_RIGHT_CLKWISE, rightCw);
 }
 
 /**

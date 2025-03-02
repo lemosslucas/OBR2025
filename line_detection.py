@@ -127,11 +127,13 @@ def identify_colour(img):
             cX = int(moments["m10"] / moments["m00"])
             
             # find the side
-            side = 'on left' if cX < mid else 'on right'
-            dominant_color = f'{dominant_color} {side}'
-                
+            side = 'left' if cX < mid else 'right'
+            
+            # return the green colour and your side
+            return dominant_color, side
+        
         # return the colour with most area on the image
-        return dominant_color
+        return dominant_color, None
     # return none if not has colour in the image
     return None
 
@@ -187,7 +189,7 @@ def detect_line(img):
         tuple: A tuple containing:
             - erro (int) - The erro beetwen the car and line
             - is_curve (int) - The side has a curve
-            - has_colour (int) - The colour on the image
+            - has_colour (tuple) - The colour on the image and your side
     """
 
     # verify if img exists
@@ -208,8 +210,6 @@ def detect_line(img):
     
         # verify if has a symbol on the img
         cor_detected = identify_colour(img)
-        if cor_detected:
-            print(f'Has the colour {cor_detected} on the image')
         
         if contours is not None:
             # drawn the line target
@@ -231,7 +231,6 @@ def detect_line(img):
             if cor_detected or is_curve != False: return 0, is_curve, cor_detected
                 
             # return the erro and is_curve
-            print(erro, is_curve)
             return erro, is_curve, cor_detected
             
     return None
@@ -247,15 +246,18 @@ if __name__ == '__main__':
     images = [f for f in os.listdir(path) if f.endswith('.jpg')]
     
     # for a specified file
-    #images = []"datas/lines/ladrilho_verde.jpg"]
+    #images = ["datas/lines/ladrilho_cinza.jpg"]
     
     for image_name in images:
         print(path + image_name)
         img = cv2.imread(path + image_name)
-        erro, is_curve = detect_line(img)
+        #img = cv2.imread(image_name)
+        
+        erro, is_curve, has_colour = detect_line(img)
+        print(erro, is_curve, has_colour)
 
-        image_name, type_file = image_name.split('.jpg')
-        download_image(erro, path, image_name, is_curve)
+        #image_name, type_file = image_name.split('.jpg')
+        #download_image(erro, path, image_name, is_curve)
         #print('The error in degrees:', erro)
         print(f"Memory used: {psutil.Process(os.getpid()).memory_info().rss / (1024 ** 2)} MB")
         print('-'*35)
