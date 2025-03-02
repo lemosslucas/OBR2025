@@ -1,13 +1,15 @@
 import cv2 
 import numpy as np
 import matplotlib.pyplot as plt
+import psutil
+import os
 
 def identify_colour(hsv_colour):
     """
     Identifies the dominant color based on the average HSV value.
 
-    Parameters:
-    hsv_colour (tuple): A tuple (h, s, v) representing the hue, 
+    Args:
+        hsv_colour (tuple): A tuple (h, s, v) representing the hue, 
                         saturation, and value of the color.
 
     Returns:
@@ -37,8 +39,8 @@ def find_ball(img):
     """
     Detects circles (balls) in an image and highlights them.
 
-    Parameters:
-    img (numpy.ndarray): Image loaded with cv2.imread.
+    Args:
+        img (numpy.ndarray): Image loaded with cv2.imread.
 
     Returns:
     numpy.ndarray: The processed image with detected circles outlined 
@@ -74,8 +76,9 @@ def find_ball(img):
             # draw the outer circle
             cv2.circle(img,(i[0],i[1]),i[2],(0,255,0),2)
             # draw the center of the circle
+            center_position = (i[0], i[1])
             cv2.circle(img,(i[0],i[1]),2,(0,0,255),3)
-        
+            
             # change the image in HSV
             img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
             
@@ -96,12 +99,11 @@ def find_ball(img):
                         fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6, 
                         color=(0, 255, 0), thickness=1, 
                         lineType=cv2.LINE_AA) 
-
-    return img
+        return img_colour, center_position 
+    return None, None
 
 if __name__ == '__main__':
     img = cv2.imread('datas/balls/one-yellow-ball.jpg')
-    img_detected = find_ball(img)
-
-    plt.imshow(cv2.cvtColor(img_detected, cv2.COLOR_BGR2RGB))
-    plt.show()
+    #img = cv2.imread('datas/lines/ladrinho3_esquerda.jpg')
+    ball_colour, ball_position = find_ball(img)
+    print(ball_colour, ball_position)

@@ -1,45 +1,23 @@
 import cv2 
 from line_detection import *
 from ball_detection import *
+import ctypes 
+# for control rasbery pi's board
+import pigpio as PIN
 
-def calculate_PID(erro, previous_erro, Kp, Kd, Ki):
-    """
-    Computes the PID control output based on the given error values and PID constants.
+# load C files
+PID_functions = ctypes.CDLL("./c_files/PID.dll")
+motors = ctypes.CDLL("./c_files/motors.dll")
 
-    The PID control formula is:
-        PID = (Kp * P) + (Ki * I) + (Kd * D)
-    
-    where:
-        - P (Proportional) is the current error.
-        - I (Integral) accumulates past errors, clamped between -255 and 255.
-        - D (Derivative) is the rate of change of the error.
+# Define arguments and returns of function
+PID_functions.calculate_PID.argtypes = (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int)
+PID_functions.calculate_PID.restype = ctypes.c_int
 
-    Parameters:
-        error (int): The current error value.
-        previous_error (int): The error from the previous iteration.
-        Kp (int): The proportional gain constant.
-        Kd (int): The derivative gain constant.
-        Ki (int): The integral gain constant.
-
-    Returns:
-        tuple: A tuple containing:
-            - PID (int): The computed PID output.
-            - previous_erro (int): The updated previous error.
-    """
-    # define param values
-    PID = 0; I = 0; P = erro
-    # limit the I on -255:255
-    I = max(-255, min(I + P, 255))
-    D = erro - previous_erro
-
-    # calculate the PID
-    PID = (Kp * P) + (Ki * I) + (Kd * D)
-
-    # update the value of erro
-    previous_erro = erro
-    
-    # return PID, previous_erro
-    return PID, previous_erro
+motors.run.argtypes = [ctypes.c_int, ctypes.c_int]
+motors.run_backward.argtypes = [ctypes.c_int, ctypes.c_int]
+motors.turn_right.argtypes = [ctypes.c_int, ctypes.c_int]
+motors.turn_left.argtypes = [ctypes.c_int, ctypes.c_int]
+motors.stop_motor.argtypes = []
 
 def adjust_move(PID):
     """
@@ -63,47 +41,54 @@ def adjust_move(PID):
     left_velocity = max(0, min(base_left_velocity + PID, 255))
 
     # update the vel of the car
-    #run(right_velocity, left_velocity)
+    motors.run(right_velocity, left_velocity)
 
 def rescue_area():
     """
     Not implemented yet!
     """
-    ...
-
+    ball_colour, ball_position = find_ball(img)
+    # precisa fazer com oq o carro siga a dirença de onde esta a bola
+    
 def main():
     # define the constat values
     Kp = 150, Ki = 0, Kd = 0, previous_erro = 0, PID = 0
-    
-    # calculate the error
-    erro, is_curve, has_colour = detect_line(img)
-    
-    # Already I go decided the magic number
-    if has_colour is not None:
-        # verify if is going to rescue area
-        if has_colour is 'grey':
-            rescue_area()
-        # verify if has a 90°curve
-        if has_colour is 'green':
-            # curve_90(side)
-            ...
-        if has_colour is 'red':
-            # stop()
-            ...        
+    right_velocity_curve = 200; left_velocity_curve = 200
 
-    if is_curve is not None:
-        if is_curve is 'left':
-            #left_curve()
-            ...
-        if is_curve is 'right':
-            #right_curve()
-            ... 
+    while True:
+        # calculate the error
+        erro, is_curve, has_colour = detect_line(img)
         
-    # calculate PID
-    PID, previous_erro = calculate_PID(erro, previous_erro, Kp, Kd, Ki)
+        # I still have to decided the magic numbers
+        if has_colour is not None:
+            colour, side_curve = has_colour
+            # verify if is going to rescue area
+            if colour is 'grey':
+                rescue_area()
+            # verify if has a 90°curve
+            if colour is 'green':
+                # turn on the correct side
+                if side_curve is 'left':
+                    motors.turn_right(right_velocity_curve, left_velocity_curve)
+                if side_curve is 'right':
+                    motors.turn_left(right_velocity_curve, left_velocity_curve)
+            if colour is 'red':
+                # stop the car on the red line
+                motors.stop()
+                break
 
-    # adjust move the car
-    adjust_move(PID)
+        if is_curve is not None:
+            if is_curve is 'left':
+                motors.turn_left(right_velocity_curve, left_velocity_curve)
+            if is_curve is 'right':
+                motors.turn_right(right_velocity_curve, left_velocity_curve)
+            
+        # calculate PID
+        PID = PID_functions.calculate_PID(erro, previous_erro, Kp, Kd, Ki)
+        previous_erro = erro
+
+        # adjust move the car
+        adjust_move(PID)
 
 if __name__ == '__main__':
     path = 'datas/lines/'
