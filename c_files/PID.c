@@ -25,7 +25,7 @@ int calculate_PID(int erro, int previous_erro, int Kp, int Kd, int Ki) {
     int P = erro;
     static int I = 0;
     // limit the I on -255:255
-    I = I + P;
+    I += P;
     if (I > 255) {I = 255;}
     if (I < -255) {I = -255;}
 

@@ -3,11 +3,11 @@ from line_detection import *
 from ball_detection import *
 import ctypes 
 # for control rasbery pi's board
-import pigpio as PIN
+#import pigpio as PIN
 
 # load C files
-PID_functions = ctypes.CDLL("./c_files/PID.dll")
-motors = ctypes.CDLL("./c_files/motors.dll")
+PID_functions = ctypes.CDLL(("./c_files/PID.so"))
+motors = ctypes.CDLL("./c_files/motors.so")
 
 # Define arguments and returns of function
 PID_functions.calculate_PID.argtypes = (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int)
@@ -52,7 +52,7 @@ def rescue_area():
     
 def main():
     # define the constat values
-    Kp = 150, Ki = 0, Kd = 0, previous_erro = 0, PID = 0
+    Kp = 150; Ki = 0; Kd = 0; previous_erro = 0; PID = 0
     right_velocity_curve = 200; left_velocity_curve = 200
 
     while True:
@@ -90,20 +90,6 @@ def main():
         # adjust move the car
         adjust_move(PID)
 
-if __name__ == '__main__':
-    path = 'datas/lines/'
-    images = [f for f in os.listdir(path) if f.endswith('.jpg')]
-    
-    # for a specified file
-    #images = []"datas/lines/ladrilho_verde.jpg"]
-    
-    for image_name in images:
-        print(path + image_name)
-        img = cv2.imread(path + image_name)
-        erro, is_curve = detect_line(img)
 
-        image_name, type_file = image_name.split('.jpg')
-        download_image(img, erro, path, image_name, is_curve)
-        #print('The error in degrees:', erro)
-        print(f"Memory used: {psutil.Process(os.getpid()).memory_info().rss / (1024 ** 2)} MB")
-        print('-'*35)
+if __name__ == '__main__':
+    main()
