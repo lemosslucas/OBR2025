@@ -2,8 +2,22 @@ import cv2
 from line_detection import *
 from ball_detection import *
 import ctypes 
+import time
 # for control rasbery pi's board
-#import pigpio as PIN
+import pigpio
+
+# initialize pigpio
+pi = pigpio.pi()
+
+# define the magic number
+MAX_DISTANCE = 8
+
+# define Pins
+TRIG = 9
+ECHO = 10
+# set pins
+pi.set_mode(TRIG, pigpio.OUTPUT)
+pi.set_mode(ECHO, pigpio.INPUT)
 
 # load C files
 PID_functions = ctypes.CDLL(("./c_files/PID.so"))
@@ -49,13 +63,103 @@ def rescue_area():
     """
     ball_colour, ball_position = find_ball(img)
     # precisa fazer com oq o carro siga a dirença de onde esta a bola
+
+def avoid_obstacle():
+    """
+    Executes a sequence of movements to avoid an obstacle detected by the ultrasonic sensor.
+
+    The robot:
+    1. Stops for 1 second.
+    2. Turns left by reducing the left motor speed for 2 seconds.
+    3. Moves forward for 4 seconds.
+    4. Turns right by reducing the right motor speed for 1 second.
+    5. Moves forward for 8 seconds.
+    6. Turns right again for 1 second.
+    7. Moves forward for 4 seconds.
+
+    This function assumes that `motors.run(right_velocity, left_velocity)`
+    controls the motors, where `right_velocity` and `left_velocity` define
+    the speed of the right and left motors, respectively.
+    """
+    # define the velocity
+    right_velocity = 255; left_velocity = 255
     
+    # stop to ensure the moves
+    motors.stop()
+    time.sleep(1)
+    
+    # maybe this not be useful
+    #motors.run_backward(right_velocity, left_velocity)
+    #time.sleep(2)
+    
+    # turn on left
+    motors.run(right_velocity, left_velocity/2)
+    time.sleep(2)
+    
+    # run forward
+    motors.run(right_velocity, left_velocity)
+    time.sleep(4)
+
+    # turn on right
+    motors.run(right_velocity/2, left_velocity)
+    time.sleep(1)
+
+    # run forward
+    motors.run(right_velocity, left_velocity)
+    time.sleep(8)
+
+    # turn on right
+    motors.run(right_velocity/2, left_velocity)
+    time.sleep(1)
+
+    # run forward
+    motors.run(right_velocity, left_velocity)
+    time.sleep(4)
+
+def measure_distance():
+    """
+    Measures the distance to the nearest object in front of the robot using an ultrasonic sensor.
+
+    The function sends a 10-microsecond pulse to the TRIG pin, waits for the response 
+    from the ECHO pin, and calculates the distance based on the time taken for the 
+    sound wave to return.
+
+    Returns:
+        float: Distance to the nearest object in centimeters.
+    """
+    # turn on the sensor
+    pi.write(TRIG, 1)
+    time.sleep(0.00001)
+    # turn of the sensor
+    pi.write(TRIG, 0)
+
+    # wait the echo get trig sinal
+    while pi.read(ECHO) == 0:
+        start = time.time()
+
+    while pi.read(ECHO) == 1:
+        end = time.time()
+
+    # calculate the wave duration
+    duration = end - start 
+    # 34300 velocity of sound
+    distance = (duration  * 34300) / 2 
+
+    # return the distance in cm
+    return distance
+
 def main():
     # define the constat values
     Kp = 150; Ki = 0; Kd = 0; previous_erro = 0; PID = 0
     right_velocity_curve = 200; left_velocity_curve = 200
 
     while True:
+        # verify if has an object on front
+        distance = measure_distance()
+
+        if distance is not None and distance <= MAX_DISTANCE:
+            avoid_obstacle()
+        
         # calculate the error
         erro, is_curve, has_colour = detect_line(img)
         
@@ -89,7 +193,6 @@ def main():
 
         # adjust move the car
         adjust_move(PID)
-
 
 if __name__ == '__main__':
     main()
