@@ -211,7 +211,8 @@ def detect_line(img):
         # verify if has a symbol on the img
         cor_detected = identify_colour(img)
         
-        if contours is not None:
+        # verify if has a line on the image
+        if len(contours) > 0:
             # drawn the line target
             cv2.drawContours(img, contours, -1, (0, 0, 255), 2)
             
@@ -233,7 +234,7 @@ def detect_line(img):
             # return the erro and is_curve
             return erro, is_curve, cor_detected
             
-    return None
+    return None, None, None
 
 def download_image(img, erro, path, image_name, is_curve=False):
     plt.title(f'Erro = {erro}°, Is curve = {is_curve}')
@@ -246,7 +247,7 @@ if __name__ == '__main__':
     images = [f for f in os.listdir(path) if f.endswith('.jpg')]
     
     # for a specified file
-    #images = ["datas/lines/ladrilho_cinza.jpg"]
+    #images = ["ladrinho_embranco.jpg"]
     
     for image_name in images:
         print(path + image_name)

@@ -23,43 +23,53 @@ def main():
 
         # verify if has an object on front
         distance = measure_distance()
-
         if distance is not None and distance <= MAX_DISTANCE:
             avoid_obstacle()
         
         # calculate the error
         erro, is_curve, has_colour = detect_line(img)
         
+        # if not has line it try to come back of line
+        if erro is None:
+            motors.run_backward(right_velocity_curve, left_velocity_curve)
+            time.sleep(0.5)
+            motors.stop_motor()
+
         # I still have to decided the magic numbers
         if has_colour is not None:
             colour, side_curve = has_colour
+
             # verify if is going to rescue area
-            if colour is 'grey':
+            if colour == 'grey':
                 rescue_area()
+
             # verify if has a 90°curve
-            if colour is 'green':
+            elif colour == 'green':
                 # turn on the correct side
-                if side_curve is 'left':
+                if side_curve == 'left':
                     motors.turn_right(right_velocity_curve, left_velocity_curve)
-                if side_curve is 'right':
+                elif side_curve == 'right':
                     motors.turn_left(right_velocity_curve, left_velocity_curve)
-            if colour is 'red':
+
+            elif colour == 'red':
                 # stop the car on the red line
                 motors.stop()
-                break
-
+                # ALL it's run fine
+                break 
+        
+        # verify if has a curve
         if is_curve is not None:
             if is_curve is 'left':
                 motors.turn_left(right_velocity_curve, left_velocity_curve)
-            if is_curve is 'right':
+            elif is_curve is 'right':
                 motors.turn_right(right_velocity_curve, left_velocity_curve)
-            
-        # calculate PID
-        PID = PID_functions.calculate_PID(erro, previous_erro, Kp, Kd, Ki)
-        previous_erro = erro
+        else:
+            # calculate PID
+            PID = PID_functions.calculate_PID(erro, previous_erro, Kp, Kd, Ki)
+            previous_erro = erro
 
-        # adjust move the car
-        adjust_move(PID)
+            # adjust move the car
+            adjust_move(PID)
 
     # restart the cam memory
     cam.release()
