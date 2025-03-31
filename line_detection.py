@@ -255,7 +255,7 @@ if __name__ == '__main__':
         #img = cv2.imread(image_name)
         
         erro, is_curve, has_colour = detect_line(img)
-        print(erro, is_curve, has_colour)
+        print(f"Erro: {erro}|isCurve: {is_curve}|has_colour: {has_colour}")
 
         #image_name, type_file = image_name.split('.jpg')
         #download_image(erro, path, image_name, is_curve)
