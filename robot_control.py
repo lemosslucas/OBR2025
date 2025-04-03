@@ -3,6 +3,15 @@ import pigpio
 import ctypes 
 import time
 from ball_detection import *
+# pip install mpu6050-raspberrypi
+from mpu6050 import mpu6050
+
+# initialize the accelerometer
+accelerometer = mpu6050(0x68)
+
+# define the ramp slope and the upper on the motor to upper the ramp
+ramp_slope = 15 
+velocity_ramp = 20
 
 # initialize pigpio
 pi = pigpio.pi()
@@ -52,6 +61,10 @@ def adjust_move(PID):
     right_velocity = max(0, min(base_right_velocity - PID, 255))
     left_velocity = max(0, min(base_left_velocity + PID, 255))
 
+    if read_accelerometer() >= ramp_slope:
+        right_velocity = max(0, min(velocity_ramp, 255))
+        left_velocity = max(0, min(velocity_ramp, 255))
+        
     # update the vel of the car
     motors.run(right_velocity, left_velocity)
 
@@ -145,3 +158,18 @@ def rescue_area(img):
     """
     ball_colour, ball_position = find_ball(img)
     # precisa fazer com oq o carro siga a dirença de onde esta a bola
+
+
+def read_accelerometer():
+    """
+    This function read the value of accelerometer on the time,
+    and return the inclination angle
+    """
+    # read the current position of robot
+    data = accelerometer.get_accel_data() 
+
+    # calculate the inclination of robot using x and z labels
+    inclination_angle = np.arctan2(data['x'], data['z']) * (180 / np.pi)
+
+    # return the inclination of robot
+    return inclination_angle

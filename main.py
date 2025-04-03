@@ -67,7 +67,7 @@ def main():
             # calculate PID
             PID = PID_functions.calculate_PID(erro, previous_erro, Kp, Kd, Ki)
             previous_erro = erro
-
+            
             # adjust move the car
             adjust_move(PID)
 
