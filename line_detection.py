@@ -43,28 +43,6 @@ def calculate_error(target_line):
     # return the erro in degree (for less use of memory)
     return int(theta_deg - 90)
 
-def draw_line(img):
-    """
-    Draws two vertical lines on the image representing the car flow boundaries.
-
-    Args:
-        img (numpy.ndarray): The input image on which the lines will be drawn.
-    """
-    # determine the size of the line
-    thickness, line_thickness = 3, 32
-    
-    # extract the img size
-    y, x, _ = img.shape
-    
-    # determine the position of car flow line in relation of x label
-    car_flow_x = int((x - line_thickness) / 2)
-
-    # drawn the line 1
-    cv2.line(img, (car_flow_x, 0), (car_flow_x, y), (0, 255, 0), thickness)
-
-    # drawn the line 2
-    cv2.line(img, (car_flow_x + line_thickness, 0), (car_flow_x + line_thickness, y), (0, 255, 0), thickness)
-
 def identify_colour(img):
     """
     Identifies the dominant color in an image based on predefined HSV ranges.
