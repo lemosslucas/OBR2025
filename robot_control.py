@@ -22,9 +22,14 @@ MAX_DISTANCE = 8
 # define Pins
 TRIG = 9
 ECHO = 10
+
 # set pins
 pi.set_mode(TRIG, pigpio.OUTPUT)
 pi.set_mode(ECHO, pigpio.INPUT)
+
+#set servo pins
+servo_arm = 17
+servo_shovel = 18
 
 # load C files
 PID_functions = ctypes.CDLL(("./c_files/PID.so"))
@@ -40,6 +45,10 @@ motors.turn_right.argtypes = [ctypes.c_int, ctypes.c_int]
 motors.turn_left.argtypes = [ctypes.c_int, ctypes.c_int]
 motors.stop_motor.argtypes = []
 
+# defint the base velocity
+base_right_velocity = 180
+base_left_velocity = 180
+
 def adjust_move(PID):
     """
     Adjusts the velocity of the robot's motors based on the PID output.
@@ -53,9 +62,6 @@ def adjust_move(PID):
         PID (int): The output of the PID controller, used to adjust the velocity of the robot's motors.
                      A positive PID value decreases the right velocity and increases the left velocity.
     """
-    # defint the base velocity
-    base_right_velocity = 180
-    base_left_velocity = 180
 
     # update the velocity values
     right_velocity = max(0, min(base_right_velocity - PID, 255))
@@ -158,7 +164,19 @@ def rescue_area(img):
     """
     ball_colour, ball_position = find_ball(img)
     # precisa fazer com oq o carro siga a dirença de onde esta a bola
+    motors.run(base_right_velocity, base_left_velocity)
 
+    pi.set_servo_pulsewidht(servo_arm, angle_to_pulse(45))
+    time.sleep(1)
+
+    pi.set_servo_pulsewidht(servo_shovel, angle_to_pulse(35))
+    time.sleep(1)
+    
+def angle_to_pulse(angle):
+    """
+    This function converts the pulses on micro
+    """
+    return 500 + (angle / 180.0) * 2000
 
 def read_accelerometer():
     """
