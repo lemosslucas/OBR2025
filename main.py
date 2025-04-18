@@ -8,10 +8,6 @@ def main():
     Kp = 150; Ki = 0; Kd = 0; previous_erro = 0; PID = 0
     right_velocity_curve = 200; left_velocity_curve = 200
 
-    # define constat values
-    BALL_NOT_FOUND = -1
-    BALLS_SAVED = 0 
-
     # init the cam
     s = 'camera-path'
     cam = cv2.VideoCapture(s)
@@ -44,7 +40,7 @@ def main():
             colour, side_curve = has_colour
 
             # verify if is going to rescue area
-            if colour == 'grey':
+            if colour == GRAY:
                 # joining on the rescue area
                 motors.run(base_right_velocity, base_left_velocity)
                 time.sleep(2)
@@ -79,14 +75,14 @@ def main():
                         break
 
             # verify if has a 90°curve
-            elif colour == 'green':
+            elif colour == GREEN:
                 # turn on the correct side
-                if side_curve == 'left':
+                if side_curve == LEFT:
                     motors.turn_right(right_velocity_curve, left_velocity_curve)
-                elif side_curve == 'right':
+                elif side_curve == RIGHT:
                     motors.turn_left(right_velocity_curve, left_velocity_curve)
 
-            elif colour == 'red':
+            elif colour == RED:
                 # stop the car on the red line
                 motors.stop()
                 # ALL it's run fine
@@ -94,9 +90,9 @@ def main():
         
         # verify if has a curve
         if is_curve is not None:
-            if is_curve is 'left':
+            if is_curve is LEFT:
                 motors.turn_left(right_velocity_curve, left_velocity_curve)
-            elif is_curve is 'right':
+            elif is_curve is RIGHT:
                 motors.turn_right(right_velocity_curve, left_velocity_curve)
         else:
             # calculate PID

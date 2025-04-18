@@ -1,8 +1,12 @@
 import cv2 
 import numpy as np
 import matplotlib.pyplot as plt
-import psutil
-import os
+
+# define the color values references
+BLACK = 0
+GRAY = 1
+GREEN = 2
+RED = 3
 
 def identify_colour(hsv_colour):
     """
@@ -13,27 +17,20 @@ def identify_colour(hsv_colour):
                         saturation, and value of the color.
 
     Returns:
-    str: The detected color name among Black, Gray, White, Red, 
-         Yellow, Green, Blue, or "Unknown".
+        int: The detected color name among Black, Gray, Red, Green, or None.
     """
     h, s, v = hsv_colour
 
     if v < 50:
-        return "Black"
+        return BLACK
     elif s < 50 and 50 <= v < 200:
-        return "Grey"
-    elif s < 50 and v >= 200:
-        return "White"
+        return GRAY
     elif (0 <= h <= 10) or (170 <= h <= 180):
-        return "Red"
-    elif 25 <= h <= 35:
-        return "Yellow"
+        return RED
     elif 35 <= h <= 85:
-        return "Green"
-    elif 100 <= h <= 130:
-        return "Blue"
+        return GREEN
     else:
-        return "Unknown"
+        return None
     
 def find_ball(img):
     """
@@ -101,6 +98,12 @@ def find_ball(img):
                         lineType=cv2.LINE_AA) 
         return img_colour, center_position 
     return None, None
+
+def find_basket_area():
+    """
+    Not implemented yet!
+    """
+    ...
 
 if __name__ == '__main__':
     img = cv2.imread('datas/balls/one-yellow-ball.jpg')

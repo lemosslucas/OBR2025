@@ -5,6 +5,15 @@ import matplotlib.pyplot as plt
 import psutil
 import os
 
+# define the color values references
+GRAY = 1
+GREEN = 2
+RED = 3
+
+# define the side curve values references
+LEFT = 1
+RIGHT = 0
+
 def calculate_error(target_line):
     """
     Calculates the error between the target line position and the car flow line position.
@@ -56,7 +65,7 @@ def identify_colour(img):
     img (numpy.ndarray): The input image in BGR format.
 
     Returns:
-    str or None: The detected color with the largest area ("red", "green", or "gray"), or None 
+    int or None: The detected color with the largest area (RED, GREEN, or GRAY), or None 
                  if no significant color region is foun
     """
     # convert image in HSV scale
@@ -64,10 +73,10 @@ def identify_colour(img):
     
     # definy colour ranges
     color_ranges = {
-        "red": [(np.array([0, 100, 100]), np.array([10, 255, 255])),
+        RED: [(np.array([0, 100, 100]), np.array([10, 255, 255])),
                 (np.array([160, 100, 100]), np.array([180, 255, 255]))],  # Red (Hue 0-10)
-        "green": [(np.array([40, 40, 40]), np.array([90, 255, 255]))],  # Green (Hue 40-90)
-        "gray": [(np.array([0, 0, 50]), np.array([130, 60, 220]))]  # Gray
+        GREEN: [(np.array([40, 40, 40]), np.array([90, 255, 255]))],  # Green (Hue 40-90)
+        GRAY: [(np.array([0, 0, 50]), np.array([130, 60, 220]))]  # Gray
     }
     
     kernel = np.ones((3, 3), np.uint8)
@@ -91,12 +100,12 @@ def identify_colour(img):
     if max(detected_areas.values()) > 0:
         dominant_color = max(detected_areas, key=detected_areas.get) 
         
-        if dominant_color == 'green':
+        if dominant_color == GREEN:
             # split the image in two sides
             mid = img.shape[1] // 2
             
             # create a green mask 
-            green_mask = sum(cv2.inRange(hsv_img, lower, upper) for lower, upper in color_ranges['green'])
+            green_mask = sum(cv2.inRange(hsv_img, lower, upper) for lower, upper in color_ranges[GREEN])
             
             # calculate moments of image
             moments = cv2.moments(green_mask)
@@ -105,7 +114,7 @@ def identify_colour(img):
             cX = int(moments["m10"] / moments["m00"])
             
             # find the side
-            side = 'left' if cX < mid else 'right'
+            side = LEFT if cX < mid else RIGHT
             
             # return the green colour and your side
             return dominant_color, side
@@ -132,8 +141,8 @@ def verify_curve(contours, img_width):
         img_width (int): Width of the image, used to determine the center.
 
     Returns:
-        str: "Left" if the curve is on the left, "Right" if it is on the right, 
-             or "No curve" if no significant curve is detected.
+        int: LEFT if the curve is on the left, RIGHT if it is on the right, 
+             or False if no significant curve is detected.
     """
 
     # Split the image in 2
@@ -147,9 +156,9 @@ def verify_curve(contours, img_width):
         # if contour > 8 probabily it's not a curve 90
         if len(contour) < 8:  
             if points_left > points_right:
-                return 'Left'
+                return LEFT
             if points_left < points_right:
-                return 'Right'
+                return RIGHT
 
     # return no curve
     return False

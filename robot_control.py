@@ -16,8 +16,15 @@ velocity_ramp = 20
 # initialize pigpio
 pi = pigpio.pi()
 
-# define the magic number
+# define the constants
 MAX_DISTANCE = 8
+MIN_DISTANCE_BALL = 200 
+BALL_NOT_FOUND = -1
+BALL_FOUND = 1
+BALLS_SAVED = 0
+
+# standard position of robot on axis-labels
+robot_position_x = 0
 
 # define Pins
 TRIG = 9
@@ -157,12 +164,6 @@ def measure_distance():
 
     # return the distance in cm
     return distance
-
-# standard position of robot on axis-labels
-robot_position_x = 0
-MIN_DISTANCE_BALL = 200 
-BALL_NOT_FOUND = -1
-BALL_FOUND = 1
 
 def rescue_area(img):
     """
