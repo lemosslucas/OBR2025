@@ -194,9 +194,6 @@ def detect_line(img):
             # drawn the line target
             cv2.drawContours(img, contours, -1, (0, 0, 255), 2)
             
-            #draw the car flow line
-            draw_line(img)
-
             # send img_widht as img.shape[1]
             is_curve = verify_curve(contours, img.shape[1])
             

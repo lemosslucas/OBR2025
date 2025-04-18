@@ -8,6 +8,10 @@ def main():
     Kp = 150; Ki = 0; Kd = 0; previous_erro = 0; PID = 0
     right_velocity_curve = 200; left_velocity_curve = 200
 
+    # define constat values
+    BALL_NOT_FOUND = -1
+    BALLS_SAVED = 0 
+
     # init the cam
     s = 'camera-path'
     cam = cv2.VideoCapture(s)
@@ -41,7 +45,38 @@ def main():
 
             # verify if is going to rescue area
             if colour == 'grey':
-                rescue_area()
+                # joining on the rescue area
+                motors.run(base_right_velocity, base_left_velocity)
+                time.sleep(2)
+
+                # loop to get the balls
+                while True:
+                    # update the image
+                    has_frame, img = cam.read()
+                    
+                    # save the state on rescue area
+                    state = rescue_area(img)
+
+                    # try to find a ball
+                    if state == BALL_NOT_FOUND:
+                        # clock the initial time to search
+                        start_search = time.time()
+                        
+                        while True:
+                            # update the image
+                            has_frame, img = cam.read()
+
+                            # searching the balls on rescue area
+                            ball_found, start_search = search_balls_on_rescue_area(img, start_search)
+                            
+                            # stop the loop when ball was found
+                            if ball_found:
+                                break
+
+                    # all the bals was saved                
+                    if state == BALLS_SAVED:
+                        # finish the work on rescue area
+                        break
 
             # verify if has a 90°curve
             elif colour == 'green':

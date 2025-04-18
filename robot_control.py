@@ -158,30 +158,109 @@ def measure_distance():
     # return the distance in cm
     return distance
 
+# standard position of robot on axis-labels
+robot_position_x = 0
+MIN_DISTANCE_BALL = 200 
+BALL_NOT_FOUND = -1
+BALL_FOUND = 1
+
 def rescue_area(img):
     """
     Not implemented yet!
     """
-    ball_colour, ball_position = find_ball(img)
-    # precisa fazer com oq o carro siga a dirença de onde esta a bola
-    motors.run(base_right_velocity, base_left_velocity)
-
-    pi.set_servo_pulsewidht(servo_arm, angle_to_pulse(45))
-    time.sleep(1)
-
-    pi.set_servo_pulsewidht(servo_shovel, angle_to_pulse(35))
-    time.sleep(1)
     
+    # find the balls on the area
+    ball_colour, (x, y) = find_ball(img)
+
+    if x is None or y is None:
+        return BALL_NOT_FOUND
+
+    # if the robot is so near at the ball it stop and catch the ball
+    if y > MIN_DISTANCE_BALL:
+        motors.stop()
+
+        # catch the ball
+        pi.set_servo_pulsewidht(servo_arm, angle_to_pulse(45))
+        time.sleep(1)
+        pi.set_servo_pulsewidht(servo_shovel, angle_to_pulse(35))
+        time.sleep(1)
+    
+    # calculate the distance
+    error = np.abs(robot_position_x - x)
+
+    # calculate the proportional error
+    kp = 0.1
+    proportional = int(kp * error)
+
+    #calculate the new velocity to go into the ball
+    right_velocity = max(0, min(base_right_velocity - proportional, 255))
+    left_velocity = max(0, min(base_left_velocity + proportional, 255))
+
+    # run into the ball position
+    motors.run(right_velocity, left_velocity)
+
+    # find where need put the ball
+    # basket_color, basket_position = find_basket(img)
+
+def search_balls_on_rescue_area(img, start_search):
+    """
+    Searching the balls on rescue area
+    """
+
+    # turn trying to find the balls
+    motors.run(-base_right_velocity, base_left_velocity)
+    # search again
+    ball_colour, (x, y) = find_ball(img)
+    
+    if x is not None or y is not None:
+        # stop the car on position where has a balls
+        motors.stop()
+
+        # return ball was found and start_search time
+        return True, start_search
+    
+    # end time was search was completed
+    end_search = time.time()
+    
+    # if the search time is bigger than 10 sec
+    if np.abs(start_search - end_search) > 10:
+        # run to a new position
+        motors.run(base_left_velocity, base_left_velocity)
+        time.sleep(2)
+        
+        # return the reseted start time
+        start_search = time.time()
+
+    # return the ball wasn't found and start_search time
+    return False, start_search 
+
 def angle_to_pulse(angle):
     """
-    This function converts the pulses on micro
+    Converts an angle in degrees to a pulse width in microseconds 
+    for controlling a servo motor.
+
+    The pulse width is calculated assuming a typical servo motor 
+    with a range from 500µs (0 degrees) to 2500µs (180 degrees).
+
+    Args:
+        angle (float): The angle in degrees (0 to 180).
+
+    Returns:
+        float: The corresponding pulse width in microseconds.
     """
     return 500 + (angle / 180.0) * 2000
 
 def read_accelerometer():
     """
-    This function read the value of accelerometer on the time,
-    and return the inclination angle
+    Reads the current accelerometer data and calculates the 
+    inclination angle of the robot in degrees.
+
+    The angle is computed using the arctangent of the x and z 
+    axes values, assuming the robot is tilting mainly in the 
+    x-z plane.
+
+    Returns:
+        float: The inclination angle of the robot in degrees.
     """
     # read the current position of robot
     data = accelerometer.get_accel_data() 
