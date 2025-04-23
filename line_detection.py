@@ -23,7 +23,7 @@ def calculate_error(target_line):
         start_point_flow (int): X-axis starting position of the car flow line.
 
     Returns:
-        int: erro in degrees.
+        int: error in degrees.
     """
     #print(target_line)
     if isinstance(target_line, tuple):
@@ -32,7 +32,7 @@ def calculate_error(target_line):
     # Convert to numpy array e remove the extra dimensions
     contour = np.squeeze(np.array(target_line))  
 
-    # avoid erro if has few points
+    # avoid error if has few points
     if contour.shape[0] < 2:
         return None  
     
@@ -49,7 +49,7 @@ def calculate_error(target_line):
     # assure the degres in [0, 180]
     theta_deg = theta_deg + 180 if theta_deg < 0 else theta_deg
     
-    # return the erro in degree (for less use of memory)
+    # return the error in degree (for less use of memory)
     return int(theta_deg - 90)
 
 def identify_colour(img):
@@ -163,67 +163,106 @@ def verify_curve(contours, img_width):
     # return no curve
     return False
 
-def detect_line(img):
+def process_image(img):
     """
-    Detects lines in the given image using edge detection and Hough Transform, 
-    draws the detected lines, and calculates the error between the detected lines 
-    and a reference flow line.
+    Preprocesses the image to isolate dark regions (potential lines) using grayscale 
+    conversion, thresholding, and morphological operations to reduce noise.
 
     Args:
-        img (numpy.ndarray): Input image, which should be in BGR format.
+        img (numpy.ndarray): Input image in BGR format.
 
     Returns:
-        tuple: A tuple containing:
-            - erro (int) - The erro beetwen the car and line
-            - is_curve (int) - The side has a curve
-            - has_colour (tuple) - The colour on the image and your side
+        numpy.ndarray: Binary image with detected dark regions (lines) highlighted.
+    """
+
+    # Convert the image to grayscale
+    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    
+    # Aplly a threshold to detect only darken colours
+    _, binary = cv2.threshold(img_gray, 50, 255, cv2.THRESH_BINARY_INV)
+
+    # reduce the noise
+    kernel = np.ones((3, 3), np.uint8)
+    binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
+    binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+
+    return binary
+
+def analyse_contours(img, contours):
+    """
+    Analyzes the provided contours to determine if a curve is present and calculate 
+    the angular error between the line and the vertical axis.
+
+    Args:
+        img (numpy.ndarray): Original image in BGR format (used for drawing).
+        contours (list): List of contours detected from the binary image.
+
+    Returns:
+        tuple:
+            - erro (int or None): Angular error in degrees relative to vertical.
+            - curve_side (int or None): LEFT or RIGHT if a curve is detected, otherwise False.
+    """
+    # verify if has a line on the image
+    if len(contours) > 0:
+        # drawn the line target
+        cv2.drawContours(img, contours, -1, (0, 0, 255), 2)
+        
+        # send img_widht as img.shape[1]
+        curve_side = verify_curve(contours, img.shape[1])
+        
+        # calculate the error
+        erro = calculate_error(contours)
+
+        # to avoid false-positive
+        if (erro > 0 and erro <= 10) or (erro >= -10 and erro < 0): curve_side = False
+
+        return erro, curve_side
+    return None, None 
+
+def detect_line(img):
+    """
+    Main function to detect a line in the input image, check for curves, and identify 
+    the presence of significant colors (red, green, or gray).
+
+    This function orchestrates the image processing pipeline including preprocessing, 
+    contour detection, curve verification, angular error calculation, and color detection.
+
+    Args:
+        img (numpy.ndarray): Input image in BGR format.
+
+    Returns:
+        tuple:
+            - error (int or None): Angular error in degrees (0 if a symbol is detected).
+            - curve_side (int or bool or None): LEFT, RIGHT, or False if no curve found.
+            - color_detected (tuple or None): Tuple with detected color code and side (if green), 
+              or None if no color is detected.
     """
 
     # verify if img exists
-    if img is not None:
-        # Convert the image to grayscale
-        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        
-        # Aplly a threshold to detect only darken colours
-        _, binary = cv2.threshold(img_gray, 50, 255, cv2.THRESH_BINARY_INV)
-    
-        # reduce the noise
-        kernel = np.ones((3, 3), np.uint8)
-        binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
-        binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
-    
-        # Detect points that form a line
-        contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
-        # verify if has a symbol on the img
-        cor_detected = identify_colour(img)
-        
-        # verify if has a line on the image
-        if len(contours) > 0:
-            # drawn the line target
-            cv2.drawContours(img, contours, -1, (0, 0, 255), 2)
-            
-            # send img_widht as img.shape[1]
-            is_curve = verify_curve(contours, img.shape[1])
-            
-            # calculate the error
-            erro = calculate_error(contours)
-                
-            # to avoid false-positive
-            if (erro > 0 and erro <= 10) or (erro >= -10 and erro < 0): is_curve = False
-            
-            # to avoid false-positive
-            if cor_detected or is_curve != False: return 0, is_curve, cor_detected
-                
-            # return the erro and is_curve
-            return erro, is_curve, cor_detected
-            
-    return None, None, None
+    if img is None:
+        return None, None, None
 
-def download_image(img, erro, path, image_name, is_curve=False):
-    plt.title(f'Erro = {erro}°, Is curve = {is_curve}')
+    # process the image
+    processed_img = process_image(img)
+    
+    # Detect points that form a line
+    contours, _ = cv2.findContours(processed_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # verify if has a symbol on the img
+    color_detected = identify_colour(img)
+    
+    # analyse the contours on the image
+    error, curve_side = analyse_contours(img, contours)
+
+    # to avoid false-positive
+    if color_detected or curve_side is not False and len(contours) > 0: return 0, curve_side, color_detected
+        
+    # return the erro and curve_side and color_detected
+    return error, curve_side, color_detected
+
+def download_image(img, erro, path, image_name, color_detected, curve_side=False):
+    plt.title(f'Erro = {erro}°, Curve = {curve_side}, Color: {color_detected}')
     plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-
     plt.savefig(f"{path}/analised/{image_name}-analised.jpg")
 
 if __name__ == '__main__':
@@ -238,11 +277,12 @@ if __name__ == '__main__':
         img = cv2.imread(path + image_name)
         #img = cv2.imread(image_name)
         
-        erro, is_curve, has_colour = detect_line(img)
-        print(f"Erro: {erro}|isCurve: {is_curve}|has_colour: {has_colour}")
+        erro, curve_side, color_detected = detect_line(img)
+        print(f"Erro: {erro}|isCurve: {curve_side}|has_colour: {color_detected}")
 
-        #image_name, type_file = image_name.split('.jpg')
-        #download_image(erro, path, image_name, is_curve)
+        image_name, type_file = image_name.split('.jpg')
+
+        #download_image(img, erro, path, image_name, color_detected, curve_side)
         #print('The error in degrees:', erro)
         print(f"Memory used: {psutil.Process(os.getpid()).memory_info().rss / (1024 ** 2)} MB")
         print('-'*35)

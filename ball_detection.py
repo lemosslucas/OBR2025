@@ -50,9 +50,6 @@ def find_ball(img):
     dim = (desired_width, desired_height)
     img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
 
-    # to debug
-    #print(img.shape)
-    
     # transform the img in gray-scale
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
