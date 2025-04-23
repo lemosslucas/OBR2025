@@ -4,7 +4,7 @@ import numpy as np
 def nothing(x):
     pass
 
-img = cv2.imread('C:/Users/Samuel/Downloads/Programacao/projetos-visao-computacional/OBR2025/datas/reliefs/box.jpg')
+img = cv2.imread('C:/Users/Samuel/Downloads/Programacao/projetos-visao-computacional/OBR2025/datas/reliefs/caixa.jpg')
 img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 cv2.namedWindow('Relief Detection')
