@@ -23,6 +23,10 @@ def main():
 
         # verify if has an object on front
         distance = measure_distance()
+        if distance == ERROR:
+            motors.stop()
+            distance = measure_distance()
+
         if distance is not None and distance <= MAX_DISTANCE:
             avoid_obstacle()
         

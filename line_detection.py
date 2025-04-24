@@ -86,7 +86,7 @@ def identify_colour(img):
     # find colours
     for color, ranges in color_ranges.items():
         # create mask colours
-        mask = sum(cv2.inRange(hsv_img, lower, upper) for lower, upper in ranges)
+        mask = np.bitwise_or.reduce([cv2.inRange(hsv_img, lower, upper) for lower, upper in ranges])
         # reduce the noisy
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
         
@@ -105,7 +105,7 @@ def identify_colour(img):
             mid = img.shape[1] // 2
             
             # create a green mask 
-            green_mask = sum(cv2.inRange(hsv_img, lower, upper) for lower, upper in color_ranges[GREEN])
+            green_mask = np.bitwise_or.reduce([cv2.inRange(hsv_img, lower, upper) for lower, upper in color_ranges[GREEN]])
             
             # calculate moments of image
             moments = cv2.moments(green_mask)

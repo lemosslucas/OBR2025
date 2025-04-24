@@ -22,6 +22,7 @@ MIN_DISTANCE_BALL = 200
 BALL_NOT_FOUND = -1
 BALL_FOUND = 1
 BALLS_SAVED = 0
+ERROR = -1
 
 # standard position of robot on axis-labels
 robot_position_x = 0
@@ -81,57 +82,77 @@ def adjust_move(PID):
     # update the vel of the car
     motors.run(right_velocity, left_velocity)
 
+def turn_until_angle(target_angle=90):
+    """
+    Rotates the robot until it reaches the specified angle using accelerometer data.
+
+    The function integrates angular acceleration over time to estimate the angle rotated
+    around the Z-axis (yaw), assuming rotation occurs primarily in that axis.
+
+    Parameters:
+        target_angle (float): The angle in degrees to rotate before stopping. Defaults to 90 degrees.
+
+    Note:
+        This implementation assumes 'accelerometer.get.accel_data()' returns a dictionary
+        with a key 'z' representing the angular acceleration (or angular velocity) in the Z-axis.
+    """
+    angle_z = 0
+    start_time = time.time()
+
+    while abs(angle_z) < target_angle:
+        data = accelerometer.get_gyro_data()
+        current_time = time.time()
+        delta_time = current_time - start_time
+        start_time = current_time
+
+        angle_z = data['z'] * delta_time
+        print(f'Angle z {angle_z:.2f}')
+        time.sleep(0.01)
+
+    print('Rotation finished')
+    motors.stop()
+
 def avoid_obstacle():
     """
-    Executes a sequence of movements to avoid an obstacle detected by the ultrasonic sensor.
+    Executes a predefined sequence of movements to avoid an obstacle.
 
-    The robot:
-    1. Stops for 1 second.
-    2. Turns left by reducing the left motor speed for 2 seconds.
+    The robot performs:
+    1. A short stop to stabilize.
+    2. A 90° left turn.
     3. Moves forward for 4 seconds.
-    4. Turns right by reducing the right motor speed for 1 second.
-    5. Moves forward for 8 seconds.
-    6. Turns right again for 1 second.
-    7. Moves forward for 4 seconds.
+    4. A 90° right turn.
+    5. Moves forward for 4 seconds.
+    6. A ~75° right turn (to realign to original path).
+    7. Moves forward for 2 seconds.
 
-    This function assumes that `motors.run(right_velocity, left_velocity)`
-    controls the motors, where `right_velocity` and `left_velocity` define
-    the speed of the right and left motors, respectively.
+    The function assumes that:
+    - `motors.run(right_velocity, left_velocity)` controls the motors.
+    - `turn_until_angle(angle)` rotates the robot using IMU data.
+    - Motor values are calibrated such that turning is achieved by stopping one side.
     """
     # define the velocity
     right_velocity = 255; left_velocity = 255
     
-    # stop to ensure the moves
     motors.stop()
-    time.sleep(1)
-    
-    # maybe this not be useful
-    #motors.run_backward(right_velocity, left_velocity)
-    #time.sleep(2)
-    
-    # turn on left
-    motors.run(right_velocity, left_velocity/2)
+    time.sleep(0.5)
+
+    motors.run(right_velocity, 0)
+    turn_until_angle(90)
+
+    motors.run(right_velocity, left_velocity)
+    time.sleep(4)
+
+    motors.run(0, left_velocity)
+    turn_until_angle(90)
+
+    motors.run(right_velocity, left_velocity)
+    time.sleep(4)
+
+    motors.run(0, left_velocity)
+    turn_until_angle(75)
+
+    motors.run(right_velocity, left_velocity)
     time.sleep(2)
-    
-    # run forward
-    motors.run(right_velocity, left_velocity)
-    time.sleep(4)
-
-    # turn on right
-    motors.run(right_velocity/2, left_velocity)
-    time.sleep(1)
-
-    # run forward
-    motors.run(right_velocity, left_velocity)
-    time.sleep(8)
-
-    # turn on right
-    motors.run(right_velocity/2, left_velocity)
-    time.sleep(1)
-
-    # run forward
-    motors.run(right_velocity, left_velocity)
-    time.sleep(4)
 
 def measure_distance():
     """
@@ -150,12 +171,22 @@ def measure_distance():
     # turn of the sensor
     pi.write(TRIG, 0)
 
+    timeout = time.time() + 1
     # wait the echo get trig sinal
     while pi.read(ECHO) == 0:
         start = time.time()
 
+        # to ensure an error situation
+        if start > timeout:
+            return ERROR
+
+    timeout = time.time() + 1
     while pi.read(ECHO) == 1:
         end = time.time()
+
+        # to ensure an error situation
+        if end > timeout:
+            return ERROR
 
     # calculate the wave duration
     duration = end - start 
@@ -181,9 +212,9 @@ def rescue_area(img):
         motors.stop()
 
         # catch the ball
-        pi.set_servo_pulsewidht(servo_arm, angle_to_pulse(45))
+        pi.set_servo_pulsewidth(servo_arm, angle_to_pulse(45))
         time.sleep(1)
-        pi.set_servo_pulsewidht(servo_shovel, angle_to_pulse(35))
+        pi.set_servo_pulsewidth(servo_shovel, angle_to_pulse(35))
         time.sleep(1)
     
     # calculate the distance
