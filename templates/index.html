@@ -1,0 +1,67 @@
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBR 2025</title>
+
+    <link rel="stylesheet" href="styles.css">
+    <script src="index.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Central de Teste UAILEE</h1>
+        <div id="container_datas">  
+            <div id="outputs">
+                <div class="param-container">
+                    <h1>Ajuste dos Parametros</h1>
+                    <div id="params_values">
+                        <div class="param-control">
+                            <label for="slider-threshold">Valor de Threshold:</label>
+                            <input type="range" id="slider-threshold" min="0" max="255" value="127">
+                            <span id="value-threshold">{{ threshold_value }}</span>
+                        </div>
+                        <div class="param-control">
+                            <label for="slider-kp">Valor de P (PID):</label>
+                            <input type="range" id="slider-kp" min="0" max="255" value="127">
+                            <span id="value-kp">{{ Kp }}</span>
+                        </div>
+                        <div class="param-control">
+                            <label for="slider-ki">Valor de I (PID):</label>
+                            <input type="range" id="slider-ki" min="0" max="255" value="127">
+                            <span id="value-ki">{{ Ki }}</span>
+                        </div>
+                        <div class="param-control">
+                            <label for="slider-kd">Valor de D (PID):</label>
+                            <input type="range" id="slider-kd" min="0" max="255" value="127">
+                            <span id="value-kd">{{ Kd }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="output_cam">
+                    <h1>Visão do robô</h1>
+                    <img src="test.jpg" width="640" height="480">
+                    <br><br>
+                    <div id="buttons_control">
+                        <button id="run_robot">Começar</button>
+                        <button id="stop_robot">Parar</button>
+                    </div>
+                </div>
+                <div class='output_code'>
+                    <h1>Saida do robô</h1>
+                    <div id="output">
+                        <span>{{ saida }}</span>
+                    </div>
+                    <div>
+                        <div id="system-status">
+                            <h1>Status do Rasberry Pi</h1>
+                            <p>CPU: <span id="cpu">--</span>%</p>
+                            <p>Memória: <span id="memory">--</span>%</p>
+                            <p>Temperatura: <span id="temperature">--</span>°C</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

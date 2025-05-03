@@ -62,6 +62,9 @@ def find_ball(img):
 
     # verify if has circles on the image
     if circles is not None: 
+        # change the image in HSV
+        img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
         circles = np.uint16(np.around(circles))
         for i in circles[0,:]:
             # cordenates of the circle
@@ -72,10 +75,7 @@ def find_ball(img):
             # draw the center of the circle
             center_position = (i[0], i[1])
             cv2.circle(img,(i[0],i[1]),2,(0,0,255),3)
-            
-            # change the image in HSV
-            img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-            
+        
             # Extracting the mean color
             mask = np.zeros(img_hsv.shape[:2], dtype=np.uint8)
             # create the mask
@@ -86,13 +86,17 @@ def find_ball(img):
     
             # get the color of the object
             img_colour = identify_colour(mean_colour_hsv)
-            
-            text_position = (x - 10, y - r - 10)
+
             # writing the colour on the image
-            cv2.putText(img, img_colour, text_position, 
-                        fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6, 
-                        color=(0, 255, 0), thickness=1, 
+            COLOUR_NAMES = {0: 'Black', 1: 'Gray', 2: 'Green', 3: 'Red'}
+            cv2.putText(img, COLOUR_NAMES.get(img_colour, 'Unknown'),
+                        (x - 10, y - r - 10), fontFace=cv2.FONT_HERSHEY_SIMPLEX, 
+                        fontScale=0.6, color=(0, 255, 0), thickness=1, 
                         lineType=cv2.LINE_AA) 
+
+        plt.imshow(img)
+        plt.show()
+
         return img_colour, center_position 
     return None, None
 
