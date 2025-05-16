@@ -4,8 +4,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OBR 2025</title>
 
-    <link rel="stylesheet" href="styles.css">
-    <script src="index.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="{{ url_for('static', filename='index.js') }}" defer></script>
 </head>
 <body>
     <div class="container">
@@ -15,31 +15,31 @@
                 <div class="param-container">
                     <h1>Ajuste dos Parametros</h1>
                     <div id="params_values">
-                        <div class="param-control">
+                        <div class="param-control" style="margin-top: 10px;">
                             <label for="slider-threshold">Valor de Threshold:</label>
-                            <input type="range" id="slider-threshold" min="0" max="255" value="127">
+                            <input type="range" id="slider-threshold" min="0" max="255" value="{{ threshold_value }}">
                             <span id="value-threshold">{{ threshold_value }}</span>
                         </div>
                         <div class="param-control">
                             <label for="slider-kp">Valor de P (PID):</label>
-                            <input type="range" id="slider-kp" min="0" max="255" value="127">
+                            <input type="range" id="slider-kp" min="0" max="255" value="{{ Kp }}">
                             <span id="value-kp">{{ Kp }}</span>
                         </div>
                         <div class="param-control">
                             <label for="slider-ki">Valor de I (PID):</label>
-                            <input type="range" id="slider-ki" min="0" max="255" value="127">
+                            <input type="range" id="slider-ki" min="0" max="255" value="{{ Ki }}">
                             <span id="value-ki">{{ Ki }}</span>
                         </div>
                         <div class="param-control">
                             <label for="slider-kd">Valor de D (PID):</label>
-                            <input type="range" id="slider-kd" min="0" max="255" value="127">
+                            <input type="range" id="slider-kd" min="0" max="255" value="{{ Kd }}">
                             <span id="value-kd">{{ Kd }}</span>
                         </div>
                     </div>
                 </div>
                 <div class="output_cam">
                     <h1>Visão do robô</h1>
-                    <img src="test.jpg" width="640" height="480">
+                    <img src="{{ url_for('show_video') }}" width="640" height="480">
                     <br><br>
                     <div id="buttons_control">
                         <button id="run_robot">Começar</button>
@@ -57,6 +57,7 @@
                             <p>CPU: <span id="cpu">--</span>%</p>
                             <p>Memória: <span id="memory">--</span>%</p>
                             <p>Temperatura: <span id="temperature">--</span>°C</p>
+                            <p>Voltagem: <span id="voltage_state">--</span></p>
                         </div>
                     </div>
                 </div>

@@ -302,3 +302,6 @@ def read_accelerometer():
 
     # return the inclination of robot
     return inclination_angle
+
+if __name__ == "__main__":
+    adjust_move(0)
