@@ -42,14 +42,14 @@
                     <img src="{{ url_for('show_video') }}" width="640" height="480">
                     <br><br>
                     <div id="buttons_control">
-                        <button id="run_robot">Começar</button>
+                        <button id="start_robot">Começar</button>
                         <button id="stop_robot">Parar</button>
                     </div>
                 </div>
                 <div class='output_code'>
                     <h1>Saida do robô</h1>
                     <div id="output">
-                        <span>{{ saida }}</span>
+                        <div id="log-container"></div>
                     </div>
                     <div>
                         <div id="system-status">

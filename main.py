@@ -5,12 +5,12 @@ from robot_control import *
 
 def main():
     # define the constat values
-    Kp = 150; Ki = 0; Kd = 0; previous_erro = 0; PID = 0
+    Kp = 150; Ki = 0; Kd = 0; previous_erro = 0
     right_velocity_curve = 200; left_velocity_curve = 200
 
     # init the cam
-    s = 'camera-path'
-    cam = cv2.VideoCapture(s)
+    camera_gate = 0
+    cam = cv2.VideoCapture(camera_gate)
     
     # loop to read the cam
     while cv2.waitKey(1) != 27:
@@ -35,8 +35,22 @@ def main():
         
         # if not has line it try to come back of line
         if erro is None:
-            motors.run_backward(right_velocity_curve, left_velocity_curve)
-            time.sleep(0.5)
+            # to ensure the robot don't run out the track
+            start_time = time.time()
+            timeout = 3
+
+            # comeback until find a line 
+            while erro is None and (time.time() - start_time < timeout):
+                motors.run_backward(right_velocity_curve, left_velocity_curve)
+                time.sleep(0.05)
+
+                # update cam image
+                has_frame, img = cam.read()
+                if not has_frame:
+                    break
+
+                erro, is_curve, has_colour = detect_line(img)
+                
             motors.stop_motor()
 
         # I still have to decided the magic numbers
@@ -48,7 +62,7 @@ def main():
                 # joining on the rescue area
                 motors.run(base_right_velocity, base_left_velocity)
                 time.sleep(2)
-
+    
                 # loop to get the balls
                 while True:
                     # update the image

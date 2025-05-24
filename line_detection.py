@@ -1,8 +1,8 @@
 # Import libraries
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
-import psutil
+#import matplotlib.pyplot as plt
+#import psutil
 import os
 
 # define the color values references
@@ -36,7 +36,7 @@ def calculate_error(target_line):
     if contour.shape[0] < 2:
         return None  
     
-    # get the extrames points
+    # get the extremes points
     x1, y1 = tuple(contour[np.argmin(contour[:, 1])])  # few value of Y (top)
     x2, y2 = tuple(contour[np.argmax(contour[:, 1])])  # bigger value of Y (base)
     
@@ -48,7 +48,7 @@ def calculate_error(target_line):
     
     # assure the degres in [0, 180]
     theta_deg = theta_deg + 180 if theta_deg < 0 else theta_deg
-    
+
     # return the error in degree (for less use of memory)
     return int(theta_deg - 90)
 
@@ -213,12 +213,12 @@ def analyse_contours(img, contours):
         curve_side = verify_curve(contours, img.shape[1])
         
         # calculate the error
-        erro = calculate_error(contours)
+        error = calculate_error(contours)
 
         # to avoid false-positive
-        if (erro > 0 and erro <= 10) or (erro >= -10 and erro < 0): curve_side = False
-
-        return erro, curve_side
+        if (error > 0 and error <= 10) or (error >= -10 and error < 0): curve_side = False
+       
+        return error, curve_side
     return None, None 
 
 def detect_line(img):
@@ -258,14 +258,15 @@ def detect_line(img):
 
     # to avoid false-positive
     if color_detected or curve_side is not False and len(contours) > 0: return 0, curve_side, color_detected
-        
+    
     # return the erro and curve_side and color_detected
     return error, curve_side, color_detected
 
 def download_image(img, erro, path, image_name, color_detected, curve_side=False):
-    plt.title(f'Erro = {erro}°, Curve = {curve_side}, Color: {color_detected}')
-    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-    plt.savefig(f"{path}/analised/{image_name}-analised.jpg")
+    #plt.title(f'Erro = {erro}°, Curve = {curve_side}, Color: {color_detected}')
+    #plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    #plt.savefig(f"{path}/analised/{image_name}-analised.jpg")
+    pass 
 
 if __name__ == '__main__':
     path = 'datas/lines/'
@@ -283,8 +284,7 @@ if __name__ == '__main__':
         print(f"Erro: {erro}|isCurve: {curve_side}|has_colour: {color_detected}")
 
         image_name, type_file = image_name.split('.jpg')
-
         #download_image(img, erro, path, image_name, color_detected, curve_side)
         #print('The error in degrees:', erro)
-        print(f"Memory used: {psutil.Process(os.getpid()).memory_info().rss / (1024 ** 2)} MB")
+        #print(f"Memory used: {psutil.Process(os.getpid()).memory_info().rss / (1024 ** 2)} MB")
         print('-'*35)

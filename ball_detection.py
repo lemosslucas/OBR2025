@@ -94,8 +94,8 @@ def find_ball(img):
                         fontScale=0.6, color=(0, 255, 0), thickness=1, 
                         lineType=cv2.LINE_AA) 
 
-        plt.imshow(img)
-        plt.show()
+        #plt.imshow(img)
+        #plt.show()
 
         return img_colour, center_position 
     return None, None
