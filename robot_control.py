@@ -105,7 +105,7 @@ def turn_until_angle(target_angle=90):
         delta_time = current_time - start_time
         start_time = current_time
 
-        angle_z = data['z'] * delta_time
+        angle_z  += data['z'] * delta_time
         print(f'Angle z {angle_z:.2f}')
         time.sleep(0.01)
 

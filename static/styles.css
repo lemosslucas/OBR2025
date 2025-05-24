@@ -29,17 +29,25 @@ button {
     font-size: 16px;
 }
 
-
-#output {  
-    color: #0f0;
-    padding: 20px;
+#output {
+    width: 595px;
+    height: 302px;
     border: 2px solid #333;
+    color: #0f0;
     font-family: monospace;
-    width: 550px;
-    height: 280px;
-    white-space: pre-wrap;      /*quebras de linha */
-    margin: 0 auto;             /* centraliza horizontalmente */
+    padding: 10px;
+    box-sizing: border-box;
+    overflow: hidden; /* evita estourar */
     text-align: left;
+}
+
+#log-container {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    gap: 4px;
+    padding-right: 10px; /* espaço pro scrollbar */
 }
 
 /*Parametros*/
@@ -99,7 +107,7 @@ button {
     color: #111;
 }
 
-#run_robot{
+#start_robot{
     background-color: green;
     color: white;
     border-radius: 5px;
