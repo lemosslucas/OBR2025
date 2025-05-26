@@ -1,18 +1,14 @@
 #include <pigpio.h>
 #include <unistd.h>
 
-#define HIGH 1
 #define LOW 0
 #define DELAY_TIME 600000
 
 // define motors ports
-const int MOTOR_LEFT_CLKWISE = 3;
-const int MOTOR_LEFT_ANTI = 4;
-const int MOTOR_RIGHT_CLKWISE = 7;
-const int MOTOR_RIGHT_ANTI = 8;
-
-const int MOTOR_PWM_LEFT = 5;
-const int MOTOR_PWM_RIGHT = 6;
+const int MOTOR_LEFT_CLKWISE = 18;
+const int MOTOR_LEFT_ANTI = 12;
+const int MOTOR_RIGHT_CLKWISE = 13;
+const int MOTOR_RIGHT_ANTI = 19;
 
 void setup_motor() {
     gpioInitialise();
@@ -21,8 +17,7 @@ void setup_motor() {
     gpioSetMode(MOTOR_RIGHT_CLKWISE, PI_OUTPUT);
     gpioSetMode(MOTOR_RIGHT_ANTI, PI_OUTPUT);
 
-    gpioSetMode(MOTOR_PWM_LEFT, PI_OUTPUT);
-    gpioSetMode(MOTOR_PWM_RIGHT, PI_OUTPUT);
+    set_state_motor(LOW, LOW, LOW, LOW);
 }
 
 /**
@@ -30,16 +25,16 @@ void setup_motor() {
  *
  * Controls the direction of each motor.
  *
- * @param leftCw LEFT motor clockwise state (HIGH/LOW).
- * @param leftCcw LEFT motor counterclockwise state (HIGH/LOW).
- * @param rightCw RIGHT motor clockwise state (HIGH/LOW).
- * @param rightCcw RIGHT motor counterclockwise state (HIGH/LOW).
+ * @param leftCw LEFT motor clockwise state (PWM).
+ * @param leftCcw LEFT motor counterclockwise state (PWM).
+ * @param rightCw RIGHT motor clockwise state (PWM).
+ * @param rightCcw RIGHT motor counterclockwise state (PWM).
  */
 void set_state_motor(int leftCw, int leftCcw, int rightCw, int rightCcw) {
-    gpioWrite(MOTOR_LEFT_ANTI, leftCcw);
-    gpioWrite(MOTOR_LEFT_CLKWISE, leftCw);
-    gpioWrite(MOTOR_RIGHT_ANTI, rightCcw);
-    gpioWrite(MOTOR_RIGHT_CLKWISE, rightCw);
+    gpioPWM(MOTOR_LEFT_ANTI, leftCcw);
+    gpioPWM(MOTOR_LEFT_CLKWISE, leftCw);
+    gpioPWM(MOTOR_RIGHT_ANTI, rightCcw);
+    gpioPWM(MOTOR_RIGHT_CLKWISE, rightCw);
 }
 
 /**
@@ -49,11 +44,8 @@ void set_state_motor(int leftCw, int leftCcw, int rightCw, int rightCcw) {
  * @param velocityLeft Speed of the LEFT motor (0 to 255).
  */
 void run(int velocityRight, int velocityLeft) {
-    // set motor states
-    set_state_motor(HIGH, LOW, HIGH, LOW);
-    // set motors velocity
-    gpioPWM(MOTOR_PWM_LEFT, velocityLeft);
-    gpioPWM(MOTOR_PWM_RIGHT, velocityRight);
+    // set motor states and velocity
+    set_state_motor(velocityLeft, LOW, velocityRight, LOW);
 }
 
 /**
@@ -72,10 +64,7 @@ void stop_motor() {
  */
 void run_backward(int velocityRight, int velocityLeft) {
     // set motor states
-    set_state_motor(LOW, HIGH, LOW, HIGH);  
-    //set motor velocity
-    gpioPWM(MOTOR_PWM_LEFT, velocityLeft);
-    gpioPWM(MOTOR_PWM_RIGHT, velocityRight);
+    set_state_motor(LOW, velocityLeft, LOW, velocityRight);  
 }
 
 /**
@@ -89,10 +78,7 @@ void run_backward(int velocityRight, int velocityLeft) {
  */
 void turn_right(int velocityRight, int velocityLeft) {
     // set motor states
-    set_state_motor(LOW, HIGH, HIGH, LOW);
-    //set motor velocity
-    gpioPWM(MOTOR_PWM_LEFT, velocityLeft + 40);
-    gpioPWM(MOTOR_PWM_RIGHT, velocityRight);
+    set_state_motor(velocityLeft + 40, LOW, velocityRight, LOW);
     usleep(DELAY_TIME);
 }
 
@@ -107,9 +93,6 @@ void turn_right(int velocityRight, int velocityLeft) {
  */
 void turn_left(int velocityRight, int velocityLeft) {
     //set motor states
-    set_state_motor(HIGH, LOW, LOW, HIGH);
-    //set motor velocity
-    gpioPWM(MOTOR_PWM_LEFT, velocityLeft);
-    gpioPWM(MOTOR_PWM_RIGHT, velocityRight + 40);
+    set_state_motor(velocityLeft, LOW, LOW, velocityRight + 40);
     usleep(DELAY_TIME);
 }

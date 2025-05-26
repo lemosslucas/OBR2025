@@ -125,9 +125,9 @@ def main():
                 motors.turn_right(right_velocity_curve, left_velocity_curve)
         else:
             # calculate PID
-            PID = PID_functions.calculate_PID(erro, previous_erro, Kp, Kd, Ki)
+            PID = calculate_PID(erro, previous_erro, Kp, Kd, Ki)
             previous_erro = erro
-            log(PID)
+            log(f'Pid {PID}')
             # adjust move the car
             adjust_move(PID)
 

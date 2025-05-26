@@ -3,22 +3,28 @@ from mpu6050 import mpu6050
 from time import sleep
 
 from robot_control import *
+from motors import MotorController
 
 # define os pinos
-led = LED(23)
-# define Pins
-TRIG = 9
-ECHO = 10
+led_verde = LED(23)
+led_vermelho = LED(24)
+
+# define ultrassonic Pins
+TRIG = 22
+ECHO = 27
 
 # set pins
 pi.set_mode(TRIG, pigpio.OUTPUT)
 pi.set_mode(ECHO, pigpio.INPUT)
 
 #set servo pins
-servo_arm = 17
-servo_shovel = 18
+servo_arm = 14
+servo_shovel = 15
 
-def teste_led():
+# initialize the accelerometer
+accelerometer = mpu6050(0x68)
+
+def teste_led(led):
     try:
         print("Piscando LED no GPIO 23... Pressione Ctrl+C para parar.")
         while True:
@@ -31,23 +37,24 @@ def teste_led():
         print("\nLED APAGADO.")
         led.off()
 
+motores = MotorController()
 def teste_motores():
     print("Movendo para frente")
-    motors.run(180, 180)
+    motores.run(180, 180)
     time.sleep(2)
 
     print("Movendo para trás")
-    motors.run_backward(180, 180)
+    motores.run_backward(180, 180)
     time.sleep(2)
 
     print("Parando")
-    motors.stop_motor()
+    motores.stop_motor()
 
 def teste_rotacao():
     print("Girando 90°")
-    motors.run(255, 0)
+    motores.run(255, 0)
     turn_until_angle(90)
-    motors.stop_motor()
+    motores.stop_motor()
 
 def teste_servo():
     print("Movendo braço para 45°")
@@ -84,7 +91,10 @@ if __name__ == '__main__':
         opcao = int(input(''))
         
         if opcao == 1:
-            teste_led()
+            print('Led Vermelho')
+            teste_led(led_vermelho)
+            print('Led Verde')
+            teste_led(led_verde)
         elif opcao == 2:
             teste_acelerometro()
         elif opcao == 3:

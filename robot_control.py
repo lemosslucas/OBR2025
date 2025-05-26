@@ -5,9 +5,10 @@ import time
 from ball_detection import *
 # pip install mpu6050-raspberrypi
 from mpu6050 import mpu6050
+from motors import MotorController
 
 # initialize the accelerometer
-accelerometer = mpu6050(0x68)
+accelerometer = mpu6050(0x69)
 
 # define the ramp slope and the upper on the motor to upper the ramp
 ramp_slope = 15 
@@ -27,35 +28,68 @@ ERROR = -1
 # standard position of robot on axis-labels
 robot_position_x = 0
 
-# define Pins
-TRIG = 9
-ECHO = 10
+# define ultrassonic Pins
+TRIG = 22
+ECHO = 27
 
 # set pins
 pi.set_mode(TRIG, pigpio.OUTPUT)
 pi.set_mode(ECHO, pigpio.INPUT)
 
 #set servo pins
-servo_arm = 17
-servo_shovel = 18
+servo_arm = 14
+servo_shovel = 15
 
 # load C files
-PID_functions = ctypes.CDLL(("./c_files/PID.so"))
-motors = ctypes.CDLL("./c_files/motors.so")
+#PID_functions = ctypes.CDLL(("./c_files/PID.so"))
 
 # Define arguments and returns of function
-PID_functions.calculate_PID.argtypes = (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int)
-PID_functions.calculate_PID.restype = ctypes.c_int
+#PID_functions.calculate_PID.argtypes = (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int)
+#PID_functions.calculate_PID.restype = ctypes.c_int
 
-motors.run.argtypes = [ctypes.c_int, ctypes.c_int]
-motors.run_backward.argtypes = [ctypes.c_int, ctypes.c_int]
-motors.turn_right.argtypes = [ctypes.c_int, ctypes.c_int]
-motors.turn_left.argtypes = [ctypes.c_int, ctypes.c_int]
-motors.stop_motor.argtypes = []
+motors = MotorController()
 
 # defint the base velocity
 base_right_velocity = 180
 base_left_velocity = 180
+
+I = 0
+
+def calculate_PID(error, previous_error, Kp, Kd, Ki):
+    """
+    Computes the PID control output based on the given error values and PID constants.
+
+    The PID control formula is:
+        PID = (Kp * P) + (Ki * I) + (Kd * D)
+
+    where:
+        - P (Proportional) is the current error.
+        - I (Integral) accumulates past errors, clamped between -255 and 255.
+        - D (Derivative) is the rate of change of the error.
+
+    Parameters:
+        error (int): The current error value.
+        previous_error (int): The error from the previous iteration.
+        Kp (int): The proportional gain constant.
+        Kd (int): The derivative gain constant.
+        Ki (int): The integral gain constant.
+
+    Returns:
+        int: The computed PID output.
+    """
+    P = error
+    I += P
+    # Clamp integral term between -255 and 255
+    if I > 255:
+        I = 255
+    elif I < -255:
+        I = -255
+
+    D = error - previous_error
+
+    PID = (Kp * P) + (Ki * I) + (Kd * D)
+
+    return PID
 
 def adjust_move(PID):
     """
@@ -105,7 +139,7 @@ def turn_until_angle(target_angle=90):
         delta_time = current_time - start_time
         start_time = current_time
 
-        angle_z  += data['z'] * delta_time
+        angle_z += data['z'] * delta_time
         print(f'Angle z {angle_z:.2f}')
         time.sleep(0.01)
 

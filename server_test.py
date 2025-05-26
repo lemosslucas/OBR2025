@@ -55,7 +55,7 @@ def log(msg):
     
     with log_lock:
         log_buffer.append(timestamped)
-    
+     
     # Append em arquivo
     with open(LOG_FILE, 'a') as f:
         f.write(timestamped + '\n')
