@@ -1,11 +1,6 @@
 import pigpio
 import time
-
-# Motor GPIO pins
-MOTOR_LEFT_CLKWISE = 18
-MOTOR_LEFT_ANTI = 12
-MOTOR_RIGHT_CLKWISE = 13
-MOTOR_RIGHT_ANTI = 19
+from constants import MOTOR_LEFT_ANTI, MOTOR_LEFT_CLKWISE, MOTOR_RIGHT_ANTI, MOTOR_RIGHT_CLKWISE
 
 # Delay in seconds
 DELAY_TIME = 0.6

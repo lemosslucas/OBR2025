@@ -1,28 +1,5 @@
-from gpiozero import LED
-from mpu6050 import mpu6050
-from time import sleep
-
-from robot_control import *
-from motors import MotorController
-
-# define os pinos
-led_verde = LED(23)
-led_vermelho = LED(24)
-
-# define ultrassonic Pins
-TRIG = 22
-ECHO = 27
-
-# set pins
-pi.set_mode(TRIG, pigpio.OUTPUT)
-pi.set_mode(ECHO, pigpio.INPUT)
-
-#set servo pins
-servo_arm = 14
-servo_shovel = 15
-
-# initialize the accelerometer
-accelerometer = mpu6050(0x68)
+from robot_control import turn_until_angle, angle_to_pulse, measure_distance, read_accelerometer
+from constants import *
 
 def teste_led(led):
     try:
@@ -37,24 +14,23 @@ def teste_led(led):
         print("\nLED APAGADO.")
         led.off()
 
-motores = MotorController()
-def teste_motores():
+def teste_motors():
     print("Movendo para frente")
-    motores.run(180, 180)
+    motors.run(180, 180)
     time.sleep(2)
 
     print("Movendo para trás")
-    motores.run_backward(180, 180)
+    motors.run_backward(180, 180)
     time.sleep(2)
 
     print("Parando")
-    motores.stop_motor()
+    motors.stop_motor()
 
 def teste_rotacao():
     print("Girando 90°")
-    motores.run(255, 0)
+    motors.run(255, 0)
     turn_until_angle(90)
-    motores.stop_motor()
+    motors.stop_motor()
 
 def teste_servo():
     print("Movendo braço para 45°")
@@ -86,15 +62,16 @@ if __name__ == '__main__':
 
     while opcao != 0:
         print('Escolha o componente a ser testado\n'
-        '(1) - LED\n(2) - Acelerometro\n(3) - Servo\n(4) - Ultrassonico\n(5) - Motor\n(6) - Rotaçao dos motores')
+        '(1) - LED\n(2) - Acelerometro\n(3) - Servo\n(4) - Ultrassonico\n(5) - Motor\n(6) - Rotaçao dos motors\n' \
+        '(0) - Sair')
 
         opcao = int(input(''))
         
         if opcao == 1:
             print('Led Vermelho')
-            teste_led(led_vermelho)
+            teste_led(red_led)
             print('Led Verde')
-            teste_led(led_verde)
+            teste_led(green_led)
         elif opcao == 2:
             teste_acelerometro()
         elif opcao == 3:
@@ -102,6 +79,6 @@ if __name__ == '__main__':
         elif opcao == 4:
             teste_ultrassonico()
         elif opcao == 5:
-            teste_motores()
+            teste_motors()
         elif opcao == 6:
             teste_rotacao()

@@ -1,12 +1,8 @@
+#import matplotlib.pyplot as plt
 import cv2 
 import numpy as np
-#import matplotlib.pyplot as plt
 
-# define the color values references
-BLACK = 0
-GRAY = 1
-GREEN = 2
-RED = 3
+from constants import GRAY, GREEN, RED, BLACK
 
 def identify_colour(hsv_colour):
     """

@@ -3,16 +3,16 @@ from flask import Flask, Response, render_template, request, jsonify, stream_wit
 from threading import Lock
 import datetime
 
-#from picamera2 import Picamera2
-#from picamera2.picamera2 import Picamera2
-#from picamera2 import Preview
+from picamera2 import Picamera2
+from picamera2.picamera2 import Picamera2
+from picamera2 import Preview
 import time
 import cv2
 import psutil
 import os
 import json
 import subprocess
-#from main import main
+from main import main
 
 app = Flask(__name__)
 
@@ -22,17 +22,16 @@ threshold_value = 50
 log_buffer = []
 log_lock = Lock()
 
-
 def generate_frames():
-    #camera = Picamera2() 
-    #camera.configure(camera.create_still_configuration())
-    #camera.start()
+    camera = Picamera2() 
+    camera.configure(camera.create_still_configuration())
+    camera.start()
 
     # Espera a câmera iniciar
     time.sleep(0.1)  
 
     while True:
-#        frame = camera.capture_array()  # Captura o frame
+        frame = camera.capture_array()  # Captura o frame
         
         frame = cv2.imread('C:/Users/Samuel/Downloads/test.jpg')
 

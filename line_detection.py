@@ -1,18 +1,9 @@
 # Import libraries
 import cv2
 import numpy as np
-#import matplotlib.pyplot as plt
-#import psutil
-import os
+import os 
 
-# define the color values references
-GRAY = 1
-GREEN = 2
-RED = 3
-
-# define the side curve values references
-LEFT = 1
-RIGHT = 0
+from constants import GRAY, GREEN, RED, LEFT, RIGHT
 
 def calculate_error(target_line):
     """

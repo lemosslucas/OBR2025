@@ -1,59 +1,5 @@
-# for control rasbery pi's board
-import pigpio
-import ctypes 
-import time
+from constants import *
 from ball_detection import *
-# pip install mpu6050-raspberrypi
-from mpu6050 import mpu6050
-from motors import MotorController
-
-# initialize the accelerometer
-accelerometer = mpu6050(0x69)
-
-# define the ramp slope and the upper on the motor to upper the ramp
-ramp_slope = 15 
-velocity_ramp = 20
-
-# initialize pigpio
-pi = pigpio.pi()
-
-# define the constants
-MAX_DISTANCE = 8
-MIN_DISTANCE_BALL = 200 
-BALL_NOT_FOUND = -1
-BALL_FOUND = 1
-BALLS_SAVED = 0
-ERROR = -1
-
-# standard position of robot on axis-labels
-robot_position_x = 0
-
-# define ultrassonic Pins
-TRIG = 22
-ECHO = 27
-
-# set pins
-pi.set_mode(TRIG, pigpio.OUTPUT)
-pi.set_mode(ECHO, pigpio.INPUT)
-
-#set servo pins
-servo_arm = 14
-servo_shovel = 15
-
-# load C files
-#PID_functions = ctypes.CDLL(("./c_files/PID.so"))
-
-# Define arguments and returns of function
-#PID_functions.calculate_PID.argtypes = (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int)
-#PID_functions.calculate_PID.restype = ctypes.c_int
-
-motors = MotorController()
-
-# defint the base velocity
-base_right_velocity = 180
-base_left_velocity = 180
-
-I = 0
 
 def calculate_PID(error, previous_error, Kp, Kd, Ki):
     """
@@ -144,7 +90,7 @@ def turn_until_angle(target_angle=90):
         time.sleep(0.01)
 
     print('Rotation finished')
-    motors.stop()
+    motors.stop_motor()
 
 def avoid_obstacle():
     """

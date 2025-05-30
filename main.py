@@ -1,8 +1,10 @@
 import cv2 
-from line_detection import *
-from ball_detection import *
-from robot_control import *
+from line_detection import detect_line
+from robot_control import (measure_distance, avoid_obstacle, 
+                           adjust_move, search_balls_on_rescue_area, 
+                           calculate_PID, rescue_area)
 from server_test import log
+from constants import *
 
 def main():
     # define the constat values
