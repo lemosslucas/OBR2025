@@ -79,7 +79,7 @@ class MotorController:
         Note:
             The delay (DELAY_TIME) determines the duration of the turn.
         """
-        self.set_state_motor(velocityLeft + 40, LOW, velocityRight, LOW)
+        self.set_state_motor(min(velocityLeft + 40, 255), LOW, velocityRight, LOW)
         time.sleep(DELAY_TIME)
 
     def turn_left(self, velocityRight, velocityLeft):
@@ -93,7 +93,7 @@ class MotorController:
         Note:
             The delay (DELAY_TIME) determines the duration of the turn.
         """
-        self.set_state_motor(velocityLeft, LOW, LOW, velocityRight + 40)
+        self.set_state_motor(velocityLeft, LOW, LOW, min(velocityRight + 40, 255))
         time.sleep(DELAY_TIME)
 
     def disconect(self):

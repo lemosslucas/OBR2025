@@ -1,7 +1,7 @@
 from constants import *
 from ball_detection import *
 
-def calculate_PID(error, previous_error, Kp, Kd, Ki):
+def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
     """
     Computes the PID control output based on the given error values and PID constants.
 
@@ -24,16 +24,14 @@ def calculate_PID(error, previous_error, Kp, Kd, Ki):
         int: The computed PID output.
     """
     P = error
-    I += P
+    pid_state['I'] += P
+
     # Clamp integral term between -255 and 255
-    if I > 255:
-        I = 255
-    elif I < -255:
-        I = -255
+    pid_state['I'] = max(-255, min(255, pid_state['I']))
 
     D = error - previous_error
 
-    PID = (Kp * P) + (Ki * I) + (Kd * D)
+    PID = (Kp * P) + (Ki * pid_state['I']) + (Kd * D)
 
     return PID
 
@@ -176,7 +174,41 @@ def measure_distance():
     # return the distance in cm
     return distance
 
-def rescue_area(img):
+def rescue_area(cam):
+    # joining on the rescue area
+    motors.run(base_right_velocity, base_left_velocity)
+    time.sleep(2)
+
+    # loop to get the balls
+    while True:
+        # update the image
+        has_frame, img = cam.read()
+        
+        # save the state on rescue area
+        state = catch_balls_on_rescue_area(img)
+
+        # try to find a ball
+        if state == BALL_NOT_FOUND:
+            # clock the initial time to search
+            start_search = time.time()
+            
+            while True:
+                # update the image
+                has_frame, img = cam.read()
+
+                # searching the balls on rescue area
+                ball_found, start_search = search_balls_on_rescue_area(img, start_search)
+                
+                # stop the loop when ball was found
+                if ball_found:
+                    break
+
+        # all the bals was saved                
+        if state == BALLS_SAVED:
+            # finish the work on rescue area
+            break
+
+def catch_balls_on_rescue_area(img):
     """
     Not implemented yet!
     """

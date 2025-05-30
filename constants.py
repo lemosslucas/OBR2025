@@ -64,8 +64,6 @@ velocity_ramp = 20
 """
 PID values
 """
-I = 0
-
 Kp = 100; Ki = 200; Kd = 150
 
 """

@@ -1,8 +1,7 @@
 import cv2 
 from line_detection import detect_line
 from robot_control import (measure_distance, avoid_obstacle, 
-                           adjust_move, search_balls_on_rescue_area, 
-                           calculate_PID, rescue_area)
+                           adjust_move, calculate_PID, rescue_area)
 from server_test import log
 from constants import *
 
@@ -29,6 +28,7 @@ def main():
         if distance == ERROR:
             motors.stop()
             distance = measure_distance()
+
         log(distance)
 
         if distance is not None and distance <= MAX_DISTANCE:
@@ -37,7 +37,6 @@ def main():
         
         # calculate the error
         erro, is_curve, has_colour = detect_line(img)
-        
         log(f'erro: {erro} | is_curve {is_curve} | has_colour {has_colour}')
 
         # if not has line it try to come back of line
@@ -67,38 +66,7 @@ def main():
             # verify if is going to rescue area
             if colour == GRAY:
                 log('Rescue area detected')
-                # joining on the rescue area
-                motors.run(base_right_velocity, base_left_velocity)
-                time.sleep(2)
-    
-                # loop to get the balls
-                while True:
-                    # update the image
-                    has_frame, img = cam.read()
-                    
-                    # save the state on rescue area
-                    state = rescue_area(img)
-
-                    # try to find a ball
-                    if state == BALL_NOT_FOUND:
-                        # clock the initial time to search
-                        start_search = time.time()
-                        
-                        while True:
-                            # update the image
-                            has_frame, img = cam.read()
-
-                            # searching the balls on rescue area
-                            ball_found, start_search = search_balls_on_rescue_area(img, start_search)
-                            
-                            # stop the loop when ball was found
-                            if ball_found:
-                                break
-
-                    # all the bals was saved                
-                    if state == BALLS_SAVED:
-                        # finish the work on rescue area
-                        break
+                rescue_area(cam)
 
             # verify if has a 90°curve
             elif colour == GREEN:
@@ -127,7 +95,8 @@ def main():
                 motors.turn_right(right_velocity_curve, left_velocity_curve)
         else:
             # calculate PID
-            PID = calculate_PID(erro, previous_erro, Kp, Kd, Ki)
+            pid_state = {'I': 0}
+            PID = calculate_PID(erro, previous_erro, Kp, Kd, Ki, pid_state)
             previous_erro = erro
             log(f'Pid {PID}')
             # adjust move the car
@@ -135,6 +104,8 @@ def main():
 
     # restart the cam memory
     cam.release()
+    # restart the motors
+    motors.disconect()
 
 if __name__ == '__main__':
     main()
