@@ -1,9 +1,10 @@
 from robot_control import turn_until_angle, angle_to_pulse, measure_distance, read_accelerometer
-from constants import *
+from constants import servo_arm, servo_shovel, ERROR
+from hardware_setup import motors, green_led, red_led, pi 
+from time import  sleep
 
 def teste_led(led):
     try:
-        print("Piscando LED no GPIO 23... Pressione Ctrl+C para parar.")
         while True:
             led.on()         # Acende o LED
             sleep(0.5)       # Espera 0.5 segundo
@@ -15,16 +16,19 @@ def teste_led(led):
         led.off()
 
 def teste_motors():
-    print("Movendo para frente")
-    motors.run(180, 180)
-    time.sleep(2)
+    try:
+        print("Movendo para frente")
+        motors.run(180, 180)
+        sleep(3)
 
-    print("Movendo para trás")
-    motors.run_backward(180, 180)
-    time.sleep(2)
+        print("Movendo para trás")
+        motors.run_backward(180, 180)
+        sleep(3)
 
-    print("Parando")
-    motors.stop_motor()
+        print("Parando")
+        motors.stop_motor()
+    except KeyboardInterrupt:
+        print('Teste motor finalizdo')
 
 def teste_rotacao():
     print("Girando 90°")
@@ -33,29 +37,39 @@ def teste_rotacao():
     motors.stop_motor()
 
 def teste_servo():
-    print("Movendo braço para 45°")
-    pi.set_servo_pulsewidth(servo_arm, angle_to_pulse(45))
-    time.sleep(1)
+    try:
+        print("Movendo braço para 45°")
+        pi.set_servo_pulsewidth(servo_arm, angle_to_pulse(45))
+        sleep(1)
 
-    print("Movendo pá para 35°")
-    pi.set_servo_pulsewidth(servo_shovel, angle_to_pulse(35))
-    time.sleep(1)
+        print("Movendo pá para 35°")
+        pi.set_servo_pulsewidth(servo_shovel, angle_to_pulse(35))
+        sleep(1)
 
-    # Reset
-    pi.set_servo_pulsewidth(servo_arm, angle_to_pulse(90))
-    pi.set_servo_pulsewidth(servo_shovel, angle_to_pulse(90))
+        # Reset
+        pi.set_servo_pulsewidth(servo_arm, angle_to_pulse(90))
+        pi.set_servo_pulsewidth(servo_shovel, angle_to_pulse(90))
+    except KeyboardInterrupt:
+        print("Teste do servo finalizado")
 
 def teste_ultrassonico():
-    print("Lendo distância...")
-    distancia = measure_distance()
-    if distancia == ERROR:
-        print("Erro na leitura do sensor!")
-    else:
-        print(f"Distância: {distancia:.2f} cm")
+    try:
+        print("Lendo distância")
+        distancia = measure_distance()
+
+        if distancia == ERROR:
+            print("Erro na leitura do sensor!")
+        else:
+            print(f"Distância: {distancia:.2f} cm")
+    except KeyboardInterrupt:
+        print("\nFim do teste do ultrassonico")
 
 def teste_acelerometro():
-    angulo = read_accelerometer()
-    print(f"Inclinação: {angulo:.2f}°")
+    try:
+        angulo = read_accelerometer()
+        print(f"Inclinação: {angulo:.2f}°")
+    except KeyboardInterrupt:
+        print('Fim da mediçaõ da inclinação')
 
 if __name__ == '__main__':
     opcao = 1

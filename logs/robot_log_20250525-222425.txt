@@ -1,0 +1,2 @@
+[2025-05-25 22:24:27] SSE connection opened
+[2025-05-25 22:24:28] SSE connection opened

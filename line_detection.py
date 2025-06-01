@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import os 
 
-from constants import GRAY, GREEN, RED, LEFT, RIGHT
+from constants import GRAY, GREEN, RED, LEFT, RIGHT, threshold_value
 
 def calculate_error(target_line):
     """
@@ -169,8 +169,6 @@ def process_image(img):
     # Convert the image to grayscale
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
-    threshold_value = 50
-
     # Aplly a threshold to detect only darken colours
     _, binary = cv2.threshold(img_gray, threshold_value, 255, cv2.THRESH_BINARY_INV)
 

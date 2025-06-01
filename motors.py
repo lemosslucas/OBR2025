@@ -1,9 +1,12 @@
 import pigpio
 import time
-from constants import MOTOR_LEFT_ANTI, MOTOR_LEFT_CLKWISE, MOTOR_RIGHT_ANTI, MOTOR_RIGHT_CLKWISE
 
-# Delay in seconds
-DELAY_TIME = 0.6
+# Motor GPIO pins
+MOTOR_LEFT_CLKWISE = 18
+MOTOR_LEFT_ANTI = 12
+MOTOR_RIGHT_CLKWISE = 13
+MOTOR_RIGHT_ANTI = 19
+
 LOW = 0
 
 class MotorController:
@@ -76,11 +79,8 @@ class MotorController:
             velocityRight (int): RIGHT motor speed (0–255).
             velocityLeft (int): LEFT motor speed (0–255).
 
-        Note:
-            The delay (DELAY_TIME) determines the duration of the turn.
         """
         self.set_state_motor(min(velocityLeft + 40, 255), LOW, velocityRight, LOW)
-        time.sleep(DELAY_TIME)
 
     def turn_left(self, velocityRight, velocityLeft):
         """
@@ -90,11 +90,8 @@ class MotorController:
             velocityRight (int): RIGHT motor speed (0–255).
             velocityLeft (int): LEFT motor speed (0–255).
 
-        Note:
-            The delay (DELAY_TIME) determines the duration of the turn.
         """
         self.set_state_motor(velocityLeft, LOW, LOW, min(velocityRight + 40, 255))
-        time.sleep(DELAY_TIME)
 
     def disconect(self):
         """

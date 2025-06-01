@@ -12,15 +12,13 @@ import psutil
 import os
 import json
 import subprocess
-from main import main
+from main import run_robot_control
+from constants import * 
 
 app = Flask(__name__)
-
-Kp = 100; Ki = 200; Kd = 150
-threshold_value = 50
-
-log_buffer = []
 log_lock = Lock()
+log_buffer = []
+LOG_FILE = f"logs/robot_log_{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.txt"
 
 def generate_frames():
     camera = Picamera2() 
@@ -33,7 +31,7 @@ def generate_frames():
     while True:
         frame = camera.capture_array()  # Captura o frame
         
-        frame = cv2.imread('C:/Users/Samuel/Downloads/test.jpg')
+        #frame = cv2.imread('C:/Users/Samuel/Downloads/test.jpg')
 
         # converte o frame 
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
@@ -46,15 +44,13 @@ def generate_frames():
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-LOG_FILE = f"logs/robot_log_{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.txt"
-
 def log(msg):
     timestamped = f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}"
-    print(timestamped)
     
     with log_lock:
         log_buffer.append(timestamped)
-     
+
+    print(f'{timestamped}: {msg}') 
     # Append em arquivo
     with open(LOG_FILE, 'a') as f:
         f.write(timestamped + '\n')
@@ -81,13 +77,15 @@ def stream_logs():
 @app.route('/start', methods=['POST'])
 def start_robot():
     log("Robo andando")
-    #main.main()
+    run_robot_control()
+    robot_running = True
     return jsonify({"status": "started"})
 
 @app.route('/stop', methods=['POST'])
 def stop_robot():
     log("Robo parado")
-    #motors.stop_motor()
+    run_robot_control()
+    robot_running = False
     return jsonify({"status": "stopped"})
 
 @app.route('/status')
@@ -95,10 +93,10 @@ def get_status():
     cpu = psutil.cpu_percent(interval=0.5)
     memory = psutil.virtual_memory().percent
 
-    # tensao
-    voltage_state = 'tmnc'
-    #voltage_state = subprocess.run(['vcgencmd', 'get_throttled'], capture_output=True, text=True)
-    #voltage_state = voltage_state.stdout.strip()
+    # voltage
+    #voltage_state = 'tmnc'
+    voltage_state = subprocess.run(['vcgencmd', 'get_throttled'], capture_output=True, text=True)
+    voltage_state = voltage_state.stdout.strip()
     
     # Lê a temperatura da CPU
     try:

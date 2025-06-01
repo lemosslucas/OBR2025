@@ -1,35 +1,56 @@
 import cv2 
 from line_detection import detect_line
 from robot_control import (measure_distance, avoid_obstacle, 
-                           adjust_move, calculate_PID, rescue_area)
+                           adjust_move, calculate_PID, rescue_area, turn_until_angle)
 from server_test import log
 from constants import *
+import time
+from hardware_setup import red_led, green_led, motors, disconnect_all_hardware
 
-def main():
-    # define the constat values
-    Kp = 150; Ki = 0; Kd = 0; previous_erro = 0
-    right_velocity_curve = 200; left_velocity_curve = 200
+global robot_running
 
+def run_robot_control():
     # init the cam
     camera_board = 0
     cam = cv2.VideoCapture(camera_board)
     
+    # verify if cam has opened
+    if not cam.isOpened():
+        log("Deu merda na camera!")
+        red_led.on()
+        time.sleep(3)
+        global_running = False
+        return
+    
+    robot_running = True 
+    green_led.on()
+
     # loop to read the cam
-    while cv2.waitKey(1) != 27:
+    while robot_running:
         # extract the cam info
         has_frame, img = cam.read()
         
         # verify if the cam working
         if not has_frame:
+            log("Nao ta dando video!")
             break
 
         # verify if has an object on front
+        distance_tries = 0
         distance = measure_distance()
-        if distance == ERROR:
-            motors.stop()
-            distance = measure_distance()
 
-        log(distance)
+        # read the distance 3 times
+        while distance_tries <= 3:
+            distance = measure_distance()
+            # verify if has error on the read
+            if distance == ERROR:
+                log('Erro na leitura do ultrassonico')
+                distance_tries += 1
+                time.sleep(0.05)
+            else: 
+                break
+
+        log(f'Distance {distance:.2f} cm')
 
         if distance is not None and distance <= MAX_DISTANCE:
             log('Avoiding obstacle')
@@ -46,19 +67,28 @@ def main():
             timeout = 3
 
             # comeback until find a line 
-            while erro is None and (time.time() - start_time < timeout):
+            while erro is None and (time.time() - start_time < timeout) and robot_running:
                 log('Lost line')
-                motors.run_backward(right_velocity_curve, left_velocity_curve)
+                motors.run_backward(base_right_velocity, base_left_velocity)
                 time.sleep(0.05)
 
                 # update cam image
                 has_frame, img = cam.read()
                 if not has_frame:
+                    log("Deu erro na imagem, tentanod voltar pra linha")
                     break
-
-                erro, is_curve, has_colour = detect_line(img)
                 
-            motors.stop_motor()
+                # get the error to verify if has back to the line
+                erro, is_curve, has_colour = detect_line(img)
+            
+            if erro is None:
+                # lost the line and stop the motors and the car
+                log("Perdeu a linha, deu merda")
+                motors.stop_motor()
+                robot_running = False
+            
+            log("Robo conseguiu voltar pra linha! ")
+                
 
         if has_colour is not None:
             colour, side_curve = has_colour
@@ -73,15 +103,18 @@ def main():
                 # turn on the correct side
                 if side_curve == LEFT:
                     log('90 degree turn on left')
-                    motors.turn_right(right_velocity_curve, left_velocity_curve)
+                    motors.turn_right(base_right_velocity, base_left_velocity)
+                    turn_until_angle(90)
                 elif side_curve == RIGHT:
                     log('90 degree turn on right')
-                    motors.turn_left(right_velocity_curve, left_velocity_curve)
+                    motors.turn_left(base_right_velocity, base_left_velocity)
+                    turn_until_angle(-90)
 
             elif colour == RED:
                 log('finish line')
                 # stop the car on the red line
-                motors.stop()
+                motors.stop_motor()
+                robot_running = False
                 # ALL it's run fine
                 break 
         
@@ -89,23 +122,24 @@ def main():
         if is_curve is not None:
             if is_curve is LEFT:
                 log('90 degree turn on left')
-                motors.turn_left(right_velocity_curve, left_velocity_curve)
+                motors.turn_left(base_right_velocity, base_left_velocity)
             elif is_curve is RIGHT:
                 log('90 degree turn on right')
-                motors.turn_right(right_velocity_curve, left_velocity_curve)
+                motors.turn_right(base_right_velocity, base_left_velocity)
         else:
-            # calculate PID
-            pid_state = {'I': 0}
             PID = calculate_PID(erro, previous_erro, Kp, Kd, Ki, pid_state)
             previous_erro = erro
             log(f'Pid {PID}')
             # adjust move the car
             adjust_move(PID)
+        
+        # off gren led
+        green_led.off()
 
     # restart the cam memory
     cam.release()
     # restart the motors
-    motors.disconect()
+    disconnect_all_hardware()
 
 if __name__ == '__main__':
-    main()
+    run_robot_control()

@@ -1,5 +1,14 @@
-from constants import *
-from ball_detection import *
+import numpy as np
+from constants import (base_left_velocity,
+                       base_right_velocity, ramp_slope, velocity_ramp,
+                       servo_arm, servo_shovel, robot_position_x,
+                       BALL_FOUND, BALL_NOT_FOUND, BALLS_SAVED, MIN_DISTANCE_BALL,
+                       TRIG, ECHO, ERROR)
+
+from hardware_setup import motors, pi, accelerometer
+from ball_detection import find_ball
+import time
+from server_test import log 
 
 def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
     """
@@ -77,16 +86,22 @@ def turn_until_angle(target_angle=90):
     angle_z = 0
     start_time = time.time()
 
+    log(f'Começando o giro de {target_angle}')
+
     while abs(angle_z) < target_angle:
-        data = accelerometer.get_gyro_data()
-        current_time = time.time()
-        delta_time = current_time - start_time
-        start_time = current_time
+        try:
+            data = accelerometer.get_gyro_data()
+            current_time = time.time()
+            delta_time = current_time - start_time
+            start_time = current_time
 
-        angle_z += data['z'] * delta_time
-        print(f'Angle z {angle_z:.2f}')
-        time.sleep(0.01)
-
+            # get the angular velocity
+            angle_z += data['z'] * delta_time
+            print(f'Angle z {angle_z:.2f}')
+            time.sleep(0.01)
+        except Exception as e:
+            log(f'Deu merda lendo o osciloscopio {e}')
+    
     print('Rotation finished')
     motors.stop_motor()
 
@@ -111,24 +126,31 @@ def avoid_obstacle():
     # define the velocity
     right_velocity = 255; left_velocity = 255
     
+    # state 1
     motors.stop()
     time.sleep(0.5)
 
+    # state 2
     motors.run(right_velocity, 0)
     turn_until_angle(90)
-
+    
+    # state 3
     motors.run(right_velocity, left_velocity)
     time.sleep(4)
 
+    # state 4
     motors.run(0, left_velocity)
     turn_until_angle(90)
 
+    # state 5
     motors.run(right_velocity, left_velocity)
     time.sleep(4)
 
+    # state 6
     motors.run(0, left_velocity)
     turn_until_angle(75)
 
+    # state 7
     motors.run(right_velocity, left_velocity)
     time.sleep(2)
 
@@ -148,32 +170,79 @@ def measure_distance():
     time.sleep(0.00001)
     # turn of the sensor
     pi.write(TRIG, 0)
-
+    
     timeout = time.time() + 1
-    # wait the echo get trig sinal
+
+    # wait for the ECHO pin to go HIGH
     while pi.read(ECHO) == 0:
-        start = time.time()
+        pulse_start = time.time()
 
         # to ensure an error situation
-        if start > timeout:
+        if pulse_start > timeout:
+            print("ECHO nao ligou!")
             return ERROR
 
     timeout = time.time() + 1
+
+    # wait for the ECHO pin go to LOW
     while pi.read(ECHO) == 1:
-        end = time.time()
+        pulse_end = time.time()
 
         # to ensure an error situation
-        if end > timeout:
+        if pulse_end > timeout:
+            print("TRIG nao ligou")
             return ERROR
 
     # calculate the wave duration
-    duration = end - start 
+    duration = pulse_end - pulse_start
+
     # 34300 velocity of sound
-    distance = (duration  * 34300) / 2 
+    distance = (duration  * 34300) / 2
 
     # return the distance in cm
     return distance
 
+def angle_to_pulse(angle):
+    """
+    Converts an angle in degrees to a pulse width in microseconds 
+    for controlling a servo motor.
+
+    The pulse width is calculated assuming a typical servo motor 
+    with a range from 500µs (0 degrees) to 2500µs (180 degrees).
+
+    Args:
+        angle (float): The angle in degrees (0 to 180).
+
+    Returns:
+        float: The corresponding pulse width in microseconds.
+    """
+    return 500 + (angle / 180.0) * 2000
+
+def read_accelerometer():
+    """
+    Reads the current accelerometer data and calculates the 
+    inclination angle of the robot in degrees.
+
+    The angle is computed using the arctangent of the x and z 
+    axes values, assuming the robot is tilting mainly in the 
+    x-z plane.
+
+    Returns:
+        float: The inclination angle of the robot in degrees.
+    """
+    try: 
+        # read the current position of robot
+        data = accelerometer.get_accel_data() 
+
+        # calculate the inclination of robot using x and z labels
+        inclination_angle = np.arctan2(data['x'], data['z']) * (180 / np.pi)
+
+        # return the inclination of robot
+        return inclination_angle
+    except Exception as e:
+        log("Deu merda no acelerometro")
+        return ERROR
+    
 def rescue_area(cam):
     # joining on the rescue area
     motors.run(base_right_velocity, base_left_velocity)
@@ -277,43 +346,6 @@ def search_balls_on_rescue_area(img, start_search):
 
     # return the ball wasn't found and start_search time
     return False, start_search 
-
-def angle_to_pulse(angle):
-    """
-    Converts an angle in degrees to a pulse width in microseconds 
-    for controlling a servo motor.
-
-    The pulse width is calculated assuming a typical servo motor 
-    with a range from 500µs (0 degrees) to 2500µs (180 degrees).
-
-    Args:
-        angle (float): The angle in degrees (0 to 180).
-
-    Returns:
-        float: The corresponding pulse width in microseconds.
-    """
-    return 500 + (angle / 180.0) * 2000
-
-def read_accelerometer():
-    """
-    Reads the current accelerometer data and calculates the 
-    inclination angle of the robot in degrees.
-
-    The angle is computed using the arctangent of the x and z 
-    axes values, assuming the robot is tilting mainly in the 
-    x-z plane.
-
-    Returns:
-        float: The inclination angle of the robot in degrees.
-    """
-    # read the current position of robot
-    data = accelerometer.get_accel_data() 
-
-    # calculate the inclination of robot using x and z labels
-    inclination_angle = np.arctan2(data['x'], data['z']) * (180 / np.pi)
-
-    # return the inclination of robot
-    return inclination_angle
 
 if __name__ == "__main__":
     adjust_move(0)
