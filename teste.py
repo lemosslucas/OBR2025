@@ -4,7 +4,7 @@ from hardware_setup import motors, green_led, red_led, pi
 from time import  sleep
 
 def teste_led(led):
-    try:
+    try:    
         while True:
             led.on()         # Acende o LED
             sleep(0.5)       # Espera 0.5 segundo

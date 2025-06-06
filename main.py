@@ -18,8 +18,8 @@ def run_robot_control():
     if not cam.isOpened():
         log("Deu merda na camera!")
         red_led.on()
-        time.sleep(3)
-        global_running = False
+        time.sleep(2)
+        robot_running = False
         return
     
     robot_running = True 
@@ -127,7 +127,7 @@ def run_robot_control():
                 log('90 degree turn on right')
                 motors.turn_right(base_right_velocity, base_left_velocity)
         else:
-            PID = calculate_PID(erro, previous_erro, Kp, Kd, Ki, pid_state)
+            PID = calculate_PID(erro, previous_error, Kp, Kd, Ki, pid_state)
             previous_erro = erro
             log(f'Pid {PID}')
             # adjust move the car

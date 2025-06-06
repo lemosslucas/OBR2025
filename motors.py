@@ -80,7 +80,7 @@ class MotorController:
             velocityLeft (int): LEFT motor speed (0–255).
 
         """
-        self.set_state_motor(min(velocityLeft + 40, 255), LOW, velocityRight, LOW)
+        self.set_state_motor(velocityLeft, LOW, velocityRight, LOW)
 
     def turn_left(self, velocityRight, velocityLeft):
         """
@@ -91,7 +91,7 @@ class MotorController:
             velocityLeft (int): LEFT motor speed (0–255).
 
         """
-        self.set_state_motor(velocityLeft, LOW, LOW, min(velocityRight + 40, 255))
+        self.set_state_motor(velocityLeft, LOW, LOW, velocityRight)
 
     def disconect(self):
         """

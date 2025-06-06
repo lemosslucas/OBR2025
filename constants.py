@@ -45,7 +45,7 @@ PID values
 """
 Kp = 100; Ki = 200; Kd = 150
 pid_state = {'I': 0}
-
+previous_error = 0 
 """
 Computer Vision constants
 """
