@@ -5,7 +5,7 @@ import time
 MOTOR_LEFT_CLKWISE = 18
 MOTOR_LEFT_ANTI = 12
 MOTOR_RIGHT_CLKWISE = 13
-MOTOR_RIGHT_ANTI = 19
+MOTOR_RIGHT_ANTI = 20
 
 LOW = 0
 
@@ -69,7 +69,7 @@ class MotorController:
             velocityRight (int): RIGHT motor speed (0–255).
             velocityLeft (int): LEFT motor speed (0–255).
         """
-        self.set_state_motor(LOW, velocityLeft, LOW, velocityRight)
+        self.set_state_motor(LOW, velocityLeft, 50, 255)
 
     def turn_right(self, velocityRight, velocityLeft):
         """

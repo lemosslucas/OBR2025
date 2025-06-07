@@ -1,4 +1,4 @@
-from robot_control import turn_until_angle, angle_to_pulse, measure_distance, read_accelerometer
+#from robot_control import turn_until_angle, angle_to_pulse, measure_distance, read_accelerometer
 from constants import servo_arm, servo_shovel, ERROR
 from hardware_setup import motors, green_led, red_led, pi 
 from time import  sleep
@@ -19,11 +19,15 @@ def teste_motors():
     try:
         print("Movendo para frente")
         motors.run(180, 180)
-        sleep(3)
+        sleep(6)
 
+        print('parou')
+        motors.stop_motor()
+        sleep(3)
+        
         print("Movendo para trás")
         motors.run_backward(180, 180)
-        sleep(3)
+        sleep(6)
 
         print("Parando")
         motors.stop_motor()
@@ -31,12 +35,14 @@ def teste_motors():
         print('Teste motor finalizdo')
 
 def teste_rotacao():
+    from robot_control import turn_until_angle
     print("Girando 90°")
     motors.run(255, 0)
     turn_until_angle(90)
     motors.stop_motor()
 
 def teste_servo():
+    from robot_control import angle_to_pulse
     try:
         print("Movendo braço para 45°")
         pi.set_servo_pulsewidth(servo_arm, angle_to_pulse(45))
@@ -53,6 +59,7 @@ def teste_servo():
         print("Teste do servo finalizado")
 
 def teste_ultrassonico():
+    from robot_control import measure_distance
     try:
         print("Lendo distância")
         distancia = measure_distance()
@@ -65,6 +72,7 @@ def teste_ultrassonico():
         print("\nFim do teste do ultrassonico")
 
 def teste_acelerometro():
+    from robot_control import read_accelerometer
     try:
         angulo = read_accelerometer()
         print(f"Inclinação: {angulo:.2f}°")

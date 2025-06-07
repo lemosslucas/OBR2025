@@ -12,9 +12,8 @@ import psutil
 import os
 import json
 import subprocess
-from main import run_robot_control
+#from main import run_robot_control, robot_running
 from constants import Kp, Kd, Ki, threshold_value
-from main import robot_running
 
 app = Flask(__name__)
 log_lock = Lock()

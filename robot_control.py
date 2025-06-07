@@ -11,7 +11,7 @@ from ball_detection import find_ball
 import time
 from server_test import log 
 from line_detection import detect_line
-from main import resize_image
+#from main import resize_image
 
 def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
     """
