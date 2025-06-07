@@ -11,6 +11,7 @@ from ball_detection import find_ball
 import time
 from server_test import log 
 from line_detection import detect_line
+from main import resize_image
 
 def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
     """
@@ -162,6 +163,8 @@ def avoid_obstacle(cam):
 
     while time.time() - start_time < timeout:
         has_frame, img = cam.read()
+
+        img = resize_image(img)
         if not has_frame:
             log("Erro na câmera durante a busca.")
             break
@@ -275,8 +278,7 @@ def rescue_area(cam):
         # update the image
         has_frame, img = cam.read()
         
-        dim = (desired_width, desired_height)
-        img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+        img = resize_image(img)
 
         # save the state on rescue area
         state = catch_balls_on_rescue_area(img)
@@ -290,6 +292,9 @@ def rescue_area(cam):
                 # update the image
                 has_frame, img = cam.read()
 
+                # resized image
+                img = resize_image(img)
+                
                 # searching the balls on rescue area
                 ball_found, start_search = search_balls_on_rescue_area(img, start_search)
                 
