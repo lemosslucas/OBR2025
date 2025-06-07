@@ -9,6 +9,21 @@ from hardware_setup import red_led, green_led, motors, disconnect_all_hardware
 
 robot_running = True
 
+def resize_image(img):
+    """
+    """
+    # para tentar o ROI
+    #h, w, _ = img.shape
+
+    #ponto_de_corte = h // 2
+    #roi = img[ponto_de_corte:h, 0:w]
+    
+    # redimensiona a imagem
+    dim = (desired_width, desired_height)
+    img_resized = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+
+    return img_resized
+
 def run_robot_control():
     # init the cam
     camera_board = 0
@@ -34,6 +49,9 @@ def run_robot_control():
         if not has_frame:
             log("Nao ta dando video!")
             break
+        
+        # resize image
+        img = resize_image(img)
 
         # verify if has an object on front
         distance_tries = 0
@@ -54,7 +72,7 @@ def run_robot_control():
 
         if distance is not None and distance <= MAX_DISTANCE:
             log('Avoiding obstacle')
-            avoid_obstacle()
+            avoid_obstacle(cam)
         
         # calculate the error
         erro, is_curve, has_colour = detect_line(img)
@@ -77,6 +95,8 @@ def run_robot_control():
                 if not has_frame:
                     log("Deu erro na imagem, tentanod voltar pra linha")
                     break
+                
+                img = resize_image(img)
                 
                 # get the error to verify if has back to the line
                 erro, is_curve, has_colour = detect_line(img)

@@ -50,3 +50,6 @@ previous_error = 0
 Computer Vision constants
 """
 threshold_value = 50
+# size of the image
+desired_width = 320
+desired_height = 240

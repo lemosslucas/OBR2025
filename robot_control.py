@@ -1,14 +1,16 @@
 import numpy as np
+import cv2
 from constants import (base_left_velocity,
                        base_right_velocity, ramp_slope, velocity_ramp,
                        servo_arm, servo_shovel, robot_position_x,
                        BALL_FOUND, BALL_NOT_FOUND, BALLS_SAVED, MIN_DISTANCE_BALL,
-                       TRIG, ECHO, ERROR)
+                       TRIG, ECHO, ERROR, desired_height, desired_width)
 
 from hardware_setup import motors, pi, accelerometer
 from ball_detection import find_ball
 import time
 from server_test import log 
+from line_detection import detect_line
 
 def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
     """
@@ -105,9 +107,10 @@ def turn_until_angle(target_angle=90):
     print('Rotation finished')
     motors.stop_motor()
 
-def avoid_obstacle():
+def avoid_obstacle(cam):
     """
     Executes a predefined sequence of movements to avoid an obstacle.
+    Turning on 
 
     The robot performs:
     1. A short stop to stabilize.
@@ -116,7 +119,7 @@ def avoid_obstacle():
     4. A 90° right turn.
     5. Moves forward for 4 seconds.
     6. A ~75° right turn (to realign to original path).
-    7. Moves forward for 2 seconds.
+    7. Try to find the line again
 
     The function assumes that:
     - `motors.run(right_velocity, left_velocity)` controls the motors.
@@ -150,9 +153,28 @@ def avoid_obstacle():
     motors.run(0, left_velocity)
     turn_until_angle(75)
 
-    # state 7
-    motors.run(right_velocity, left_velocity)
-    time.sleep(2)
+    log('Desvio feito! Procurando a linha')
+    motors.run(150, 150)
+
+    # loop with timeout to avoid be trapped forever
+    start_time = time.time()
+    timeout = 5
+
+    while time.time() - start_time < timeout:
+        has_frame, img = cam.read()
+        if not has_frame:
+            log("Erro na câmera durante a busca.")
+            break
+
+        erro, _, _ = detect_line(img)
+        if erro is not None:
+            log("Linha reencontrada! Retomando controle.")
+            motors.stop_motor()
+            return
+    
+    log('fudeu, nao achei a linha denovo')
+    motors.stop_motor()
+
 
 def measure_distance():
     """
@@ -253,6 +275,9 @@ def rescue_area(cam):
         # update the image
         has_frame, img = cam.read()
         
+        dim = (desired_width, desired_height)
+        img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+
         # save the state on rescue area
         state = catch_balls_on_rescue_area(img)
 
