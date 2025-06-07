@@ -13,7 +13,8 @@ import os
 import json
 import subprocess
 from main import run_robot_control
-from constants import * 
+from constants import Kp, Kd, Ki, threshold_value
+from main import robot_running
 
 app = Flask(__name__)
 log_lock = Lock()
@@ -84,7 +85,6 @@ def start_robot():
 @app.route('/stop', methods=['POST'])
 def stop_robot():
     log("Robo parado")
-    run_robot_control()
     robot_running = False
     return jsonify({"status": "stopped"})
 
@@ -127,7 +127,6 @@ def index():
 
 @app.route('/update_params', methods=['POST'])
 def update_params():
-    global Kp, Ki, Kd, threshold_value
     data = request.get_json()
     
     Kp = int(data.get('kp', Kp))

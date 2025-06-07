@@ -7,7 +7,7 @@ from constants import *
 import time
 from hardware_setup import red_led, green_led, motors, disconnect_all_hardware
 
-global robot_running
+robot_running = True
 
 def run_robot_control():
     # init the cam
