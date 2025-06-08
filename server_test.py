@@ -79,7 +79,6 @@ def get_status():
     memory = psutil.virtual_memory().percent
 
     # voltage
-    #voltage_state = 'tmnc'
     voltage_state = subprocess.run(['vcgencmd', 'get_throttled'], capture_output=True, text=True)
     voltage_state = voltage_state.stdout.strip()
     
@@ -130,4 +129,10 @@ def update_params():
     })
 
 if __name__ == '__main__':
+    log("Iniciando a thread do feed da camera...")
+    camera_thread = Thread(target=main.update_camera_feed)
+    camera_thread.daemon = True
+    camera_thread.start()
+
+    # Inicia o servidor web
     app.run(host='0.0.0.0', port=5000, debug=False)

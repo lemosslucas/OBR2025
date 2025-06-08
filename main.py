@@ -1,4 +1,5 @@
 import cv2 
+from picamera2 import Picamera2
 from line_detection import detect_line
 from robot_control import (measure_distance, avoid_obstacle, 
                            adjust_move, calculate_PID, rescue_area, turn_until_angle,
@@ -11,40 +12,47 @@ from hardware_setup import red_led, green_led, motors, disconnect_all_hardware
 robot_running = True
 img = None
 
+# init the cam
+cam = Picamera2()
+config = cam.create_preview_configuration(main={"size": (desired_width, desired_height)}, controls={"FrameRate": 15})
+cam.configure(config)
+cam.start()
+log('aguardando a inicializacao da camera')
+time.sleep(1)
+    
+log("Camera ligou")
+green_led.on()
+
 def get_current_img():
     return img
+
+def update_camera_feed():
+    """
+    Uma função simples que roda em uma thread separada
+    para manter a variável global 'img' sempre atualizada.
+    """
+    global img
+    while True:
+        try:
+            # Apenas captura o array e atualiza a variável global
+            img = cam.capture_array()
+        except Exception as e:
+            log(f"Falha ao capturar frame para o feed: {e}")
+            # Uma pequena pausa antes de tentar novamente
+            time.sleep(0.5)
 
 def run_robot_control():
     # define global variables
     global robot_running, img
 
-    # init the cam
-    camera_board = 0
-    cam = cv2.VideoCapture(camera_board)
-    
-    # verify if cam has opened
-    if not cam.isOpened():
-        log("Deu merda na camera!")
-        red_led.on()
-        time.sleep(2)
-        robot_running = False
-        return
-    
-    green_led.on()
-
     # loop to read the cam
     while robot_running:
         # extract the cam info
-        has_frame, img = cam.read()
+        if img is None:
+            log("Aguardando primeiro frame da camera")
+            time.sleep(0.1)
+            continue
         
-        # verify if the cam working
-        if not has_frame:
-            log("Nao ta dando video!")
-            break
-        
-        # resize image
-        img = resize_image(img)
-
         # verify if has an object on front
         distance_tries = 0
         distance = measure_distance()
@@ -83,13 +91,14 @@ def run_robot_control():
                 time.sleep(0.05)
 
                 # update cam image
-                has_frame, img = cam.read()
-                if not has_frame:
-                    log("Deu erro na imagem, tentanod voltar pra linha")
+                try:
+                    # Tenta capturar uma nova imagem para reavaliar a posição
+                    img = cam.capture_array()
+                except Exception as e:
+                    log(f"Erro na imagem tentando voltar para a linha: {e}")
+                    # Se a câmera falhar aqui, não há como se recuperar, então saia do loop
                     break
-                
-                img = resize_image(img)
-                
+                            
                 # get the error to verify if has back to the line
                 erro, is_curve, has_colour = detect_line(img)
             
