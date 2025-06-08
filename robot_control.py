@@ -1,5 +1,7 @@
 import numpy as np
 import cv2
+import time
+
 from constants import (base_left_velocity,
                        base_right_velocity, ramp_slope, velocity_ramp,
                        servo_arm, servo_shovel, robot_position_x,
@@ -8,10 +10,34 @@ from constants import (base_left_velocity,
 
 from hardware_setup import motors, pi, accelerometer
 from ball_detection import find_ball
-import time
-from server_test import log 
 from line_detection import detect_line
-#from main import resize_image
+from logger import log 
+
+def resize_image(img):
+    """
+    Resizes the input image to the desired dimensions using INTER_AREA interpolation.
+
+    This function is typically used to reduce or standardize the input image size
+    for further processing, such as region of interest (ROI) extraction or 
+    computational efficiency in vision algorithms.
+
+    Parameters:
+        img (numpy.ndarray): The input image to be resized.
+
+    Returns:
+        numpy.ndarray: The resized image with dimensions (desired_width, desired_height).
+    """
+    # para tentar o ROI
+    #h, w, _ = img.shape
+
+    #slice_point = h // 2
+    #roi = img[slice_point:h, 0:w]
+    
+    # redimensiona a imagem
+    dim = (desired_width, desired_height)
+    img_resized = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+
+    return img_resized
 
 def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
     """
@@ -37,6 +63,11 @@ def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
     """
     P = error
     pid_state['I'] += P
+
+    # anti wind up
+    if (P > 0 and previous_error < 0) or (P < 0 and previous_error > 0):
+        log('PID Integral zerado para evitar windup.')
+        pid_state['I'] = 0
 
     # Clamp integral term between -255 and 255
     pid_state['I'] = max(-255, min(255, pid_state['I']))
@@ -131,7 +162,7 @@ def avoid_obstacle(cam):
     right_velocity = 255; left_velocity = 255
     
     # state 1
-    motors.stop()
+    motors.stop_motor()
     time.sleep(0.5)
 
     # state 2
@@ -162,16 +193,21 @@ def avoid_obstacle(cam):
     timeout = 5
 
     while time.time() - start_time < timeout:
+        # get the img
         has_frame, img = cam.read()
 
-        img = resize_image(img)
+        # verify the cam
         if not has_frame:
             log("Erro na câmera durante a busca.")
             break
+        
+        # resize the image on the scale
+        img = resize_image(img)
 
+        # verify if found the line
         erro, _, _ = detect_line(img)
         if erro is not None:
-            log("Linha reencontrada! Retomando controle.")
+            log("Linha reencontrada! voltou.")
             motors.stop_motor()
             return
     
@@ -190,32 +226,34 @@ def measure_distance():
     Returns:
         float: Distance to the nearest object in centimeters.
     """
+    pulse_start = None 
+    pulse_end = None 
+
     # turn on the sensor
     pi.write(TRIG, 1)
     time.sleep(0.00001)
     # turn of the sensor
     pi.write(TRIG, 0)
     
-    timeout = time.time() + 1
+    start_time = time.time()
+    timeout = time.time() + 0.2
 
     # wait for the ECHO pin to go HIGH
     while pi.read(ECHO) == 0:
         pulse_start = time.time()
 
         # to ensure an error situation
-        if pulse_start > timeout:
-            print("ECHO nao ligou!")
+        if pulse_start - start_time > timeout:
+            print("ECHO nao ligou timeout!")
             return ERROR
-
-    timeout = time.time() + 1
 
     # wait for the ECHO pin go to LOW
     while pi.read(ECHO) == 1:
         pulse_end = time.time()
 
         # to ensure an error situation
-        if pulse_end > timeout:
-            print("TRIG nao ligou")
+        if pulse_end - start_time > timeout:
+            print("TRIG nao ligou, timeout")
             return ERROR
 
     # calculate the wave duration
@@ -278,6 +316,11 @@ def rescue_area(cam):
         # update the image
         has_frame, img = cam.read()
         
+        # verify the cam
+        if not has_frame:
+            log("Erro na câmera durante a busca.")
+            break
+        
         img = resize_image(img)
 
         # save the state on rescue area
@@ -291,6 +334,11 @@ def rescue_area(cam):
             while True:
                 # update the image
                 has_frame, img = cam.read()
+
+                # verify the cam
+                if not has_frame:
+                    log("Erro na câmera durante a busca.")
+                    break
 
                 # resized image
                 img = resize_image(img)

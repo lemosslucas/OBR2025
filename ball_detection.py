@@ -39,13 +39,6 @@ def find_ball(img):
     numpy.ndarray: The processed image with detected circles outlined 
                    and their identified colors labeled.
     """
-
-    # resize the image into dimensions ESP32-cam
-    desired_width = 320
-    desired_height = 240
-    dim = (desired_width, desired_height)
-    img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
-
     # transform the img in gray-scale
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     

@@ -1,4 +1,3 @@
-#from robot_control import turn_until_angle, angle_to_pulse, measure_distance, read_accelerometer
 from constants import servo_arm, servo_shovel, ERROR
 from hardware_setup import motors, green_led, red_led, pi 
 from time import  sleep

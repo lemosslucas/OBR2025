@@ -1,7 +1,7 @@
 import pigpio
 import time
 
-# Motor GPIO pins
+# Motor GPIO pins (inversed)
 MOTOR_LEFT_CLKWISE = 18
 MOTOR_LEFT_ANTI = 12
 MOTOR_RIGHT_CLKWISE = 13
@@ -69,7 +69,7 @@ class MotorController:
             velocityRight (int): RIGHT motor speed (0–255).
             velocityLeft (int): LEFT motor speed (0–255).
         """
-        self.set_state_motor(LOW, velocityLeft, 50, 255)
+        self.set_state_motor(LOW, velocityLeft, LOW, velocityRight)
 
     def turn_right(self, velocityRight, velocityLeft):
         """
@@ -80,7 +80,7 @@ class MotorController:
             velocityLeft (int): LEFT motor speed (0–255).
 
         """
-        self.set_state_motor(velocityLeft, LOW, velocityRight, LOW)
+        self.set_state_motor(velocityLeft, LOW, LOW, velocityRight)
 
     def turn_left(self, velocityRight, velocityLeft):
         """
@@ -91,7 +91,7 @@ class MotorController:
             velocityLeft (int): LEFT motor speed (0–255).
 
         """
-        self.set_state_motor(velocityLeft, LOW, LOW, velocityRight)
+        self.set_state_motor(LOW, velocityLeft, velocityRight, LOW)
 
     def disconect(self):
         """

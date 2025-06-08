@@ -1,37 +1,30 @@
 import io
 from flask import Flask, Response, render_template, request, jsonify, stream_with_context
-from threading import Lock
+from threading import Thread
 import datetime
 
-from picamera2 import Picamera2
-from picamera2.picamera2 import Picamera2
-from picamera2 import Preview
 import time
 import cv2
 import psutil
 import os
 import json
 import subprocess
-#from main import run_robot_control, robot_running
-from constants import Kp, Kd, Ki, threshold_value
+
+from main import run_robot_control, robot_running
+from constants import update_constants, Kp, Ki, Kd, threshold_value
+
+from logger import log, log_buffer, log_lock
+import main 
 
 app = Flask(__name__)
-log_lock = Lock()
-log_buffer = []
-LOG_FILE = f"logs/robot_log_{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.txt"
 
 def generate_frames():
-    camera = Picamera2() 
-    camera.configure(camera.create_still_configuration())
-    camera.start()
-
-    # Espera a câmera iniciar
-    time.sleep(0.1)  
-
     while True:
-        frame = camera.capture_array()  # Captura o frame
+        frame = main.get_current_img()
         
-        #frame = cv2.imread('C:/Users/Samuel/Downloads/test.jpg')
+        if frame is None:
+            time.sleep(0.1)
+            continue
 
         # converte o frame 
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
@@ -44,16 +37,6 @@ def generate_frames():
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-def log(msg):
-    timestamped = f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}"
-    
-    with log_lock:
-        log_buffer.append(timestamped)
-
-    print(f'{timestamped}: {msg}') 
-    # Append em arquivo
-    with open(LOG_FILE, 'a') as f:
-        f.write(timestamped + '\n')
 
 @app.route('/logs')
 def stream_logs():
@@ -77,14 +60,17 @@ def stream_logs():
 @app.route('/start', methods=['POST'])
 def start_robot():
     log("Robo andando")
-    run_robot_control()
-    robot_running = True
+    main.robot_running = True
+    t = Thread(target=run_robot_control)
+    t.daemon = True
+    t.start()
+
     return jsonify({"status": "started"})
 
 @app.route('/stop', methods=['POST'])
 def stop_robot():
     log("Robo parado")
-    robot_running = False
+    main.robot_running = False
     return jsonify({"status": "stopped"})
 
 @app.route('/status')
@@ -127,12 +113,14 @@ def index():
 @app.route('/update_params', methods=['POST'])
 def update_params():
     data = request.get_json()
-    
-    Kp = int(data.get('kp', Kp))
-    Ki = int(data.get('ki', Ki))
-    Kd = int(data.get('kd', Kd))
-    threshold_value = int(data.get('threshold', threshold_value))
-    
+
+    update_constants(
+        kp=float(data.get('kp', Kp)),
+        ki=float(data.get('ki', Ki)),
+        kd=float(data.get('kd', Kd)),
+        threshold=int(data.get('threshold', threshold_value))
+    )
+
     return jsonify({
         "status": "ok",
         "Kp": Kp,

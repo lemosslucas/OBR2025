@@ -53,3 +53,14 @@ threshold_value = 50
 # size of the image
 desired_width = 320
 desired_height = 240
+
+def update_constants(kp=None, ki=None, kd=None, threshold=None):
+    global Kp, Ki, Kd, threshold_value
+    if kp is not None:
+        Kp = kp
+    if ki is not None:
+        Ki = ki
+    if kd is not None:
+        Kd = kd
+    if threshold is not None:
+        threshold_value = threshold

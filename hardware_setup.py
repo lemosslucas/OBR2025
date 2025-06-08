@@ -3,7 +3,7 @@ from gpiozero import LED
 from mpu6050 import mpu6050
 from motors import MotorController
 from constants import TRIG, ECHO
-from server_test import log
+from logger import log 
 
 # initalize the compontens
 pi = pigpio.pi()
@@ -32,4 +32,4 @@ def disconnect_all_hardware():
         green_led.close()
         red_led.close()
     except Exception as e:
-        print(f"Erro ao fechar LEDs: {e}")
+        log(f"Erro ao fechar LEDs: {e}")

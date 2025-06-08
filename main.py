@@ -1,30 +1,23 @@
 import cv2 
 from line_detection import detect_line
 from robot_control import (measure_distance, avoid_obstacle, 
-                           adjust_move, calculate_PID, rescue_area, turn_until_angle)
-from server_test import log
+                           adjust_move, calculate_PID, rescue_area, turn_until_angle,
+                           resize_image)
+from logger import log
 from constants import *
 import time
 from hardware_setup import red_led, green_led, motors, disconnect_all_hardware
 
 robot_running = True
+img = None
 
-def resize_image(img):
-    """
-    """
-    # para tentar o ROI
-    #h, w, _ = img.shape
-
-    #ponto_de_corte = h // 2
-    #roi = img[ponto_de_corte:h, 0:w]
-    
-    # redimensiona a imagem
-    dim = (desired_width, desired_height)
-    img_resized = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
-
-    return img_resized
+def get_current_img():
+    return img
 
 def run_robot_control():
+    # define global variables
+    global robot_running, img
+
     # init the cam
     camera_board = 0
     cam = cv2.VideoCapture(camera_board)
@@ -37,7 +30,6 @@ def run_robot_control():
         robot_running = False
         return
     
-    robot_running = True 
     green_led.on()
 
     # loop to read the cam
@@ -148,11 +140,13 @@ def run_robot_control():
                 motors.turn_right(base_right_velocity, base_left_velocity)
         else:
             PID = calculate_PID(erro, previous_error, Kp, Kd, Ki, pid_state)
-            previous_erro = erro
             log(f'Pid {PID}')
             # adjust move the car
             adjust_move(PID)
         
+        if erro is not None:
+            previous_erro = erro
+            
         # off gren led
         green_led.off()
 
