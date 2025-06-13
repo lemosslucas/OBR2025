@@ -15,8 +15,6 @@ from logger import log
 
 def resize_image(img):
     """
-    Resizes the input image to the desired dimensions using INTER_AREA interpolation.
-
     This function is typically used to reduce or standardize the input image size
     for further processing, such as region of interest (ROI) extraction or 
     computational efficiency in vision algorithms.
@@ -28,16 +26,11 @@ def resize_image(img):
         numpy.ndarray: The resized image with dimensions (desired_width, desired_height).
     """
     # para tentar o ROI
-    #h, w, _ = img.shape
+    h, w, _ = img.shape
 
-    #slice_point = h // 2
-    #roi = img[slice_point:h, 0:w]
-    
-    # redimensiona a imagem
-    dim = (desired_width, desired_height)
-    img_resized = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
-
-    return img_resized
+    slice_point = h // 2 - 60
+    roi = img[slice_point:h, 0:w]
+    return roi
 
 def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
     """
@@ -214,7 +207,6 @@ def avoid_obstacle(cam):
     log('fudeu, nao achei a linha denovo')
     motors.stop_motor()
 
-
 def measure_distance():
     """
     Measures the distance to the nearest object in front of the robot using an ultrasonic sensor.
@@ -226,41 +218,35 @@ def measure_distance():
     Returns:
         float: Distance to the nearest object in centimeters.
     """
-    pulse_start = None 
-    pulse_end = None 
+    # turn on the sensor 10 micro sec
+    pi.gpio_trigger(TRIG, 10)
 
-    # turn on the sensor
-    pi.write(TRIG, 1)
-    time.sleep(0.00001)
-    # turn of the sensor
-    pi.write(TRIG, 0)
-    
     start_time = time.time()
-    timeout = time.time() + 0.2
+    timeout = 0.2
 
     # wait for the ECHO pin to go HIGH
     while pi.read(ECHO) == 0:
         pulse_start = time.time()
-
         # to ensure an error situation
         if pulse_start - start_time > timeout:
             print("ECHO nao ligou timeout!")
             return ERROR
-
+        
     # wait for the ECHO pin go to LOW
     while pi.read(ECHO) == 1:
-        pulse_end = time.time()
-
         # to ensure an error situation
-        if pulse_end - start_time > timeout:
+        if time.time() - start_time > timeout:
             print("TRIG nao ligou, timeout")
             return ERROR
+
+    # get the pulse end
+    pulse_end = time.time()
 
     # calculate the wave duration
     duration = pulse_end - pulse_start
 
-    # 34300 velocity of sound
-    distance = (duration  * 34300) / 2
+    # (duration  * 34300) / 2 velocity of sound
+    distance = duration * 17150
 
     # return the distance in cm
     return distance
@@ -305,7 +291,10 @@ def read_accelerometer():
     except Exception as e:
         log("Deu merda no acelerometro")
         return ERROR
-    
+
+"""
+Rescue area
+"""
 def rescue_area(cam):
     # joining on the rescue area
     motors.run(base_right_velocity, base_left_velocity)

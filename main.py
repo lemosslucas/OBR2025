@@ -2,8 +2,7 @@ import cv2
 from picamera2 import Picamera2
 from line_detection import detect_line
 from robot_control import (measure_distance, avoid_obstacle, 
-                           adjust_move, calculate_PID, rescue_area, turn_until_angle,
-                           resize_image)
+                           adjust_move, calculate_PID, rescue_area, turn_until_angle)
 from logger import log
 from constants import *
 import time
@@ -13,15 +12,18 @@ robot_running = True
 img = None
 
 # init the cam
-cam = Picamera2()
-config = cam.create_preview_configuration(main={"size": (desired_width, desired_height)}, controls={"FrameRate": 15})
-cam.configure(config)
-cam.start()
-log('aguardando a inicializacao da camera')
-time.sleep(1)
-    
-log("Camera ligou")
-green_led.on()
+try:
+    cam = Picamera2()
+    config = cam.create_preview_configuration(main={"size": (desired_width, desired_height)}, controls={"FrameRate": 15})
+    cam.configure(config)
+    cam.start()
+    log('aguardando a inicializacao da camera')
+    time.sleep(1)    
+    log("Camera ligou")
+    green_led.on()
+except RuntimeError as e:
+    log('Deu erro na camera')
+    red_led.on()
 
 def get_current_img():
     return img
