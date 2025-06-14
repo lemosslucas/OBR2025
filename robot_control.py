@@ -13,7 +13,7 @@ from ball_detection import find_ball
 from line_detection import detect_line
 from logger import log 
 
-def resize_image(img):
+def get_roi(img):
     """
     This function is typically used to reduce or standardize the input image size
     for further processing, such as region of interest (ROI) extraction or 
@@ -27,7 +27,7 @@ def resize_image(img):
     """
     # para tentar o ROI
     h, w, _ = img.shape
-
+    
     slice_point = h // 2 - 60
     roi = img[slice_point:h, 0:w]
     return roi
@@ -156,25 +156,29 @@ def avoid_obstacle(cam):
     
     # state 1
     motors.stop_motor()
-    time.sleep(0.5)
+    time.sleep(0.3)
 
     # state 2
+    motors.run_backward(right_velocity, left_velocity)
+    time.sleep(0.4)
+
+    # state 3
     motors.run(right_velocity, 0)
     turn_until_angle(90)
     
-    # state 3
-    motors.run(right_velocity, left_velocity)
-    time.sleep(4)
-
     # state 4
+    motors.run(right_velocity, left_velocity)
+    time.sleep(0.1)
+
+    # state 5
     motors.run(0, left_velocity)
     turn_until_angle(90)
 
-    # state 5
-    motors.run(right_velocity, left_velocity)
-    time.sleep(4)
-
     # state 6
+    motors.run(right_velocity, left_velocity)
+    time.sleep(0.5)
+
+    # state 7
     motors.run(0, left_velocity)
     turn_until_angle(75)
 
@@ -183,7 +187,7 @@ def avoid_obstacle(cam):
 
     # loop with timeout to avoid be trapped forever
     start_time = time.time()
-    timeout = 5
+    timeout = 2
 
     while time.time() - start_time < timeout:
         # get the img
@@ -195,7 +199,7 @@ def avoid_obstacle(cam):
             break
         
         # resize the image on the scale
-        img = resize_image(img)
+        img = get_roi(img)
 
         # verify if found the line
         erro, _, _ = detect_line(img)
@@ -223,6 +227,7 @@ def measure_distance():
 
     start_time = time.time()
     timeout = 0.2
+    pulse_start = time.time()
 
     # wait for the ECHO pin to go HIGH
     while pi.read(ECHO) == 0:
@@ -310,7 +315,7 @@ def rescue_area(cam):
             log("Erro na câmera durante a busca.")
             break
         
-        img = resize_image(img)
+        img = get_roi(img)
 
         # save the state on rescue area
         state = catch_balls_on_rescue_area(img)
@@ -330,7 +335,7 @@ def rescue_area(cam):
                     break
 
                 # resized image
-                img = resize_image(img)
+                img = get_roi(img)
                 
                 # searching the balls on rescue area
                 ball_found, start_search = search_balls_on_rescue_area(img, start_search)

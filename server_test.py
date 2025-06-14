@@ -26,9 +26,6 @@ def generate_frames():
             time.sleep(0.1)
             continue
 
-        # converte o frame 
-        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-
         # Codifica o frame como JPEG sem nenhum processamento
         ret, buffer = cv2.imencode('.jpg', frame)
         frame = buffer.tobytes()
@@ -71,6 +68,7 @@ def start_robot():
 def stop_robot():
     log("Robo parado")
     main.robot_running = False
+    main.motors.stop_motor()
     return jsonify({"status": "stopped"})
 
 @app.route('/status')

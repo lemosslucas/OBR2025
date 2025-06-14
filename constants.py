@@ -12,7 +12,7 @@ servo_shovel = 15
 """
 Constant values
 """
-MAX_DISTANCE = 8
+MAX_DISTANCE = 10
 MIN_DISTANCE_BALL = 200 
 BALL_NOT_FOUND = -1
 BALL_FOUND = 1
@@ -43,16 +43,19 @@ velocity_ramp = 20
 """
 PID values
 """
-Kp = 100; Ki = 200; Kd = 150
+Kp = 1; Ki = 0.01; Kd = 0.1
 pid_state = {'I': 0}
 previous_error = 0 
+
 """
 Computer Vision constants
 """
-threshold_value = 50
+threshold_value = 133
 # size of the image
 desired_width = 320
 desired_height = 240
+
+curve_threshold = 50
 
 def update_constants(kp=None, ki=None, kd=None, threshold=None):
     global Kp, Ki, Kd, threshold_value

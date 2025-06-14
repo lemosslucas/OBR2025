@@ -3,7 +3,8 @@ import cv2
 import numpy as np
 import os 
 
-from constants import GRAY, GREEN, RED, LEFT, RIGHT, threshold_value
+from constants import GRAY, GREEN, RED, LEFT, RIGHT, curve_threshold
+import constants
 
 def calculate_error(target_line):
     """
@@ -64,10 +65,10 @@ def identify_colour(img):
     
     # definy colour ranges
     color_ranges = {
-        RED: [(np.array([0, 100, 100]), np.array([10, 255, 255])),
-                (np.array([160, 100, 100]), np.array([180, 255, 255]))],  # Red (Hue 0-10)
-        GREEN: [(np.array([40, 40, 40]), np.array([90, 255, 255]))],  # Green (Hue 40-90)
-        GRAY: [(np.array([0, 0, 50]), np.array([130, 60, 220]))]  # Gray
+#        RED: [(np.array([0, 100, 100]), np.array([10, 255, 255])),
+#                (np.array([160, 100, 100]), np.array([180, 255, 255]))],  # Red (Hue 0-10)
+#        GREEN: [(np.array([40, 40, 40]), np.array([90, 255, 255]))],  # Green (Hue 40-90)
+#        GRAY: [(np.array([0, 0, 50]), np.array([130, 60, 220]))]  # Gray
     }
     
     kernel = np.ones((3, 3), np.uint8)
@@ -115,7 +116,34 @@ def identify_colour(img):
     # return none if not has colour in the image
     return None
 
-def verify_curve(contours, img_width):
+def process_image(img):
+    """
+    Preprocesses the image to isolate dark regions (potential lines) using grayscale 
+    conversion, thresholding, and morphological operations to reduce noise.
+
+    Args:
+        img (numpy.ndarray): Input image in BGR format.
+
+    Returns:
+        numpy.ndarray: Binary image with detected dark regions (lines) highlighted.
+    """
+
+    # Convert the image to grayscale
+    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    
+    # Aplly a threshold to detect only darken colours
+    _, binary = cv2.threshold(img_gray, constants.threshold_value, 255, cv2.THRESH_BINARY_INV)
+
+    # reduce the noise
+    kernel = np.ones((5, 5), np.uint8)
+    # fill the gaps
+    binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+    # reduce the noise
+    binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
+
+    return binary
+
+def find_curve_side(contours, img_width):
     """
     Checks if there is a curve in the image and identifies its direction.
 
@@ -143,41 +171,49 @@ def verify_curve(contours, img_width):
         X = contour[:, 0, 0]
 
         points_left, points_right = np.sum(X < mid), np.sum(X >= mid)
+  
+        if points_left > points_right:
+            return LEFT
+        if points_left < points_right:
+            return RIGHT
 
-        # if contour > 8 probabily it's not a curve 90
-        if len(contour) < 8:  
-            if points_left > points_right:
-                return LEFT
-            if points_left < points_right:
-                return RIGHT
-
-    # return no curve
-    return False
-
-def process_image(img):
+def verify_90_curve(contour):
     """
-    Preprocesses the image to isolate dark regions (potential lines) using grayscale 
-    conversion, thresholding, and morphological operations to reduce noise.
-
-    Args:
-        img (numpy.ndarray): Input image in BGR format.
-
-    Returns:
-        numpy.ndarray: Binary image with detected dark regions (lines) highlighted.
     """
-
-    # Convert the image to grayscale
-    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    if len(contour) < 1:
+        print('cu1')
+        return False
     
-    # Aplly a threshold to detect only darken colours
-    _, binary = cv2.threshold(img_gray, threshold_value, 255, cv2.THRESH_BINARY_INV)
+    # get the heighst and lower point on the contour
+    highest_y = min(contour[:, 0, 1])
+    lowest_y = max(contour[:, 0, 1])
 
-    # reduce the noise
-    kernel = np.ones((3, 3), np.uint8)
-    binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
-    binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+    # get the meddium point
+    average_y = highest_y + (lowest_y - highest_y) / 2
 
-    return binary
+    # split the contour point in two parts
+    bottom_points = contour[contour[:, 0, 1] > average_y]
+    top_points = contour[contour[:, 0, 1] <= average_y]
+
+    # ensure one part not has that points
+    if len(bottom_points) == 0 or len(top_points) == 0:
+        print('cu2')
+        return False 
+    
+    # calculate the horizontal center
+    center_bottom_x = int(np.mean(bottom_points[:, 0, 0]))
+    center_top_x = int(np.mean(top_points[:, 0, 0]))
+
+    # calculate the deviation
+    deviation = abs(center_top_x - center_bottom_x)
+
+    # if deviation is soo big, it's a 90° curve
+    if deviation > curve_threshold:
+        print('loucura')
+        return True
+
+    print('cu3')  
+    return False
 
 def analyse_contours(img, contours):
     """
@@ -195,18 +231,26 @@ def analyse_contours(img, contours):
     """
     # verify if has a line on the image
     if len(contours) > 0:
+        contour_target = max(contours, key=cv2.contourArea)
         # drawn the line target
-        cv2.drawContours(img, contours, -1, (0, 0, 255), 2)
-        
-        # send img_widht as img.shape[1]
-        curve_side = verify_curve(contours, img.shape[1])
-        
-        # calculate the error
-        error = calculate_error(contours)
+        print(len(contours))
 
-        # to avoid false-positive
-        if (error > 0 and error <= 10) or (error >= -10 and error < 0): curve_side = False
-       
+        cv2.drawContours(img, contours, -1, (0, 0, 255), 2)
+        #cv2.drawContours(img, contour_target, -1, (255, 0, 0), 5)
+
+        # send img_widht as img.shape[1]
+        has_90_curve = verify_90_curve(contour_target, img.shape[0])
+        
+        # initialize curve_side as false
+        curve_side = False
+
+        # find the curve side
+        if has_90_curve:
+            curve_side = find_curve_side(contour_target)
+
+        # calculate the error
+        error = calculate_error(contour_target)
+
         return error, curve_side
     return None, None 
 
@@ -240,8 +284,9 @@ def detect_line(img):
     contours, _ = cv2.findContours(processed_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # verify if has a symbol on the img
-    color_detected = identify_colour(img)
-    
+#   color_detected = identify_colour(img)
+    color_detected = None
+
     # analyse the contours on the image
     error, curve_side = analyse_contours(img, contours)
 
@@ -251,9 +296,12 @@ def detect_line(img):
     # return the erro and curve_side and color_detected
     return error, curve_side, color_detected
 
+import matplotlib.pyplot as plt 
+
 def download_image(img, erro, path, image_name, color_detected, curve_side=False):
-    #plt.title(f'Erro = {erro}°, Curve = {curve_side}, Color: {color_detected}')
-    #plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    plt.title(f'Erro = {erro}°, Curve = {curve_side}, Color: {color_detected}')
+    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    plt.show()
     #plt.savefig(f"{path}/analised/{image_name}-analised.jpg")
     pass 
 
@@ -273,7 +321,7 @@ if __name__ == '__main__':
         print(f"Erro: {erro}|isCurve: {curve_side}|has_colour: {color_detected}")
 
         image_name, type_file = image_name.split('.jpg')
-        #download_image(img, erro, path, image_name, color_detected, curve_side)
+        download_image(img, erro, path, image_name, color_detected, curve_side)
         #print('The error in degrees:', erro)
         #print(f"Memory used: {psutil.Process(os.getpid()).memory_info().rss / (1024 ** 2)} MB")
         print('-'*35)

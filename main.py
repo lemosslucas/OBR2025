@@ -54,7 +54,7 @@ def run_robot_control():
             log("Aguardando primeiro frame da camera")
             time.sleep(0.1)
             continue
-        
+
         # verify if has an object on front
         distance_tries = 0
         distance = measure_distance()
@@ -76,6 +76,8 @@ def run_robot_control():
             log('Avoiding obstacle')
             avoid_obstacle(cam)
         
+        from robot_control import get_roi
+        img = get_roi(img)
         # calculate the error
         erro, is_curve, has_colour = detect_line(img)
         log(f'erro: {erro} | is_curve {is_curve} | has_colour {has_colour}')
@@ -94,11 +96,9 @@ def run_robot_control():
 
                 # update cam image
                 try:
-                    # Tenta capturar uma nova imagem para reavaliar a posição
-                    img = cam.capture_array()
+                    update_camera_feed()
                 except Exception as e:
                     log(f"Erro na imagem tentando voltar para a linha: {e}")
-                    # Se a câmera falhar aqui, não há como se recuperar, então saia do loop
                     break
                             
                 # get the error to verify if has back to the line
