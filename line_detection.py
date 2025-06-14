@@ -296,12 +296,12 @@ def detect_line(img):
     # return the erro and curve_side and color_detected
     return error, curve_side, color_detected
 
-import matplotlib.pyplot as plt 
+#import matplotlib.pyplot as plt 
 
 def download_image(img, erro, path, image_name, color_detected, curve_side=False):
-    plt.title(f'Erro = {erro}°, Curve = {curve_side}, Color: {color_detected}')
-    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-    plt.show()
+    #plt.title(f'Erro = {erro}°, Curve = {curve_side}, Color: {color_detected}')
+    #plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    #plt.show()
     #plt.savefig(f"{path}/analised/{image_name}-analised.jpg")
     pass 
 
@@ -321,7 +321,7 @@ if __name__ == '__main__':
         print(f"Erro: {erro}|isCurve: {curve_side}|has_colour: {color_detected}")
 
         image_name, type_file = image_name.split('.jpg')
-        download_image(img, erro, path, image_name, color_detected, curve_side)
+        #download_image(img, erro, path, image_name, color_detected, curve_side)
         #print('The error in degrees:', erro)
         #print(f"Memory used: {psutil.Process(os.getpid()).memory_info().rss / (1024 ** 2)} MB")
         print('-'*35)

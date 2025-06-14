@@ -93,13 +93,6 @@ def run_robot_control():
                 log('Lost line')
                 motors.run_backward(base_right_velocity, base_left_velocity)
                 time.sleep(0.05)
-
-                # update cam image
-                try:
-                    update_camera_feed()
-                except Exception as e:
-                    log(f"Erro na imagem tentando voltar para a linha: {e}")
-                    break
                             
                 # get the error to verify if has back to the line
                 erro, is_curve, has_colour = detect_line(img)
