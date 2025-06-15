@@ -6,7 +6,7 @@ from constants import (base_left_velocity,
                        base_right_velocity, ramp_slope, velocity_ramp,
                        servo_arm, servo_shovel, robot_position_x,
                        BALL_FOUND, BALL_NOT_FOUND, BALLS_SAVED, MIN_DISTANCE_BALL,
-                       TRIG, ECHO, ERROR, desired_height, desired_width)
+                       TRIG, ECHO, ERROR, gyro_bias_z)
 
 from hardware_setup import motors, pi, accelerometer
 from ball_detection import find_ball
@@ -28,7 +28,7 @@ def get_roi(img):
     # para tentar o ROI
     h, w, _ = img.shape
 #   print(f'h={h}, w={w}')
-    slice_point = h // 2 - 120
+    slice_point = h // 2
     roi = img[slice_point:h, 55:w-55]
 
     return roi
@@ -102,7 +102,36 @@ def adjust_move(PID):
     # update the vel of the car
     motors.run(right_velocity, left_velocity)
 
-def turn_until_angle(target_angle=90):
+
+"""
+Accelerometer
+"""
+# Adicione esta função em robot_control.py
+def calibrate_gyro(samples=200):
+    """
+    Mede o desvio (bias) do giroscópio no eixo Z quando o robô está parado.
+    params:
+        samples: numero de medicoes
+    return:
+        float: desvio do giroscopio no eixo Z
+    """
+    log("Calibrando o giroscópio... Mantenha o robô parado.")
+    sum_gz = 0
+    for _ in range(samples):
+        try:
+            gyro_data = accelerometer.get_gyro_data()
+            sum_gz += gyro_data['z']
+            time.sleep(0.01)
+        except Exception as e:
+            log(f"Erro durante calibração: {e}")
+            return 0
+            
+    bias_gz = sum_gz / samples
+    log(f"Calibração concluída. Bias do Giroscópio (Gz) = {bias_gz:.4f}")
+
+    return bias_gz
+
+def turn_until_angle(target_angle=90, gyro_bias_z=0):
     """
     Rotates the robot until it reaches the specified angle using accelerometer data.
 
@@ -129,7 +158,9 @@ def turn_until_angle(target_angle=90):
             start_time = current_time
 
             # get the angular velocity
-            angle_z += data['z'] * delta_time
+            angular_velocity = data['z'] - gyro_bias_z
+
+            angle_z += angular_velocity * delta_time
             time.sleep(0.01)
         except Exception as e:
             log(f'Deu merda lendo o osciloscopio {e}')
@@ -169,7 +200,7 @@ def avoid_obstacle(cam):
 
     # state 3
     motors.run(right_velocity, 0)
-    turn_until_angle(90)
+    turn_until_angle(90, gyro_bias_z=gyro_bias_z)
     
     # state 4
     motors.run(right_velocity, left_velocity)
@@ -177,7 +208,7 @@ def avoid_obstacle(cam):
 
     # state 5
     motors.run(0, left_velocity)
-    turn_until_angle(90)
+    turn_until_angle(90, gyro_bias_z=gyro_bias_z)
 
     # state 6
     motors.run(right_velocity, left_velocity)
@@ -185,7 +216,7 @@ def avoid_obstacle(cam):
 
     # state 7
     motors.run(0, left_velocity)
-    turn_until_angle(45)
+    turn_until_angle(45, gyro_bias_z=gyro_bias_z)
 
     # state 8
     motors.run(right_velocity, left_velocity)
@@ -193,7 +224,7 @@ def avoid_obstacle(cam):
 
     #state 9
     motors.run(right_velocity, 0)
-    turn_until_angle(45)
+    turn_until_angle(45, gyro_bias_z=gyro_bias_z)
     
     log('Desvio feito! Procurando a linha')
     motors.run(150, 150)

@@ -1,7 +1,7 @@
 import cv2 
 from picamera2 import Picamera2
 from line_detection import detect_line
-from robot_control import (measure_distance, avoid_obstacle, 
+from robot_control import (measure_distance, avoid_obstacle, calibrate_gyro, 
                            adjust_move, calculate_PID, rescue_area, turn_until_angle)
 from logger import log
 from constants import *
@@ -46,6 +46,8 @@ def update_camera_feed():
             # Uma pequena pausa antes de tentar novamente
             time.sleep(0.5)
 
+gyro_bias_z = calibrate_gyro(200)
+
 def run_robot_control():
     # define global variables
     global robot_running, img
@@ -88,10 +90,10 @@ def run_robot_control():
         if erro is None:
             # to ensure the robot don't run out the track
             start_time = time.time()
-            timeout = 3
+            timeout = 2
 
             # comeback until find a line 
-            while erro is None and (time.time() - start_time < timeout) and robot_running:
+            while erro is None or (time.time() - start_time < timeout) and robot_running:
                 log('Lost line')
                 motors.run_backward(base_right_velocity, base_left_velocity)
                 time.sleep(0.05)
@@ -122,17 +124,18 @@ def run_robot_control():
                 if side_curve == LEFT:
                     log('90 degree turn on left')
                     motors.turn_right(base_right_velocity, base_left_velocity)
-                    turn_until_angle(90)
+                    turn_until_angle(90, gyro_bias_z=gyro_bias_z)
                 elif side_curve == RIGHT:
                     log('90 degree turn on right')
                     motors.turn_left(base_right_velocity, base_left_velocity)
-                    turn_until_angle(90)
+                    turn_until_angle(90, gyro_bias_z=gyro_bias_z)
 
             elif colour == RED:
                 log('finish line')
                 # stop the car on the red line
                 motors.stop_motor()
                 robot_running = False
+                disconnect_all_hardware()
                 # ALL it's run fine
                 break 
         
@@ -141,24 +144,22 @@ def run_robot_control():
             if is_curve is LEFT:
                 log('90 degree turn on left')
                 motors.turn_left(base_right_velocity, base_left_velocity)
+                turn_until_angle(90, gyro_bias_z=gyro_bias_z)
             elif is_curve is RIGHT:
                 log('90 degree turn on right')
                 motors.turn_right(base_right_velocity, base_left_velocity)
+                turn_until_angle(90, gyro_bias_z=gyro_bias_z)
         else:
-            PID = calculate_PID(erro, previous_error, constants.Kp, constants.Kd, constants.Ki, pid_state)
+            PID = calculate_PID(erro, constants.previous_error, constants.Kp, constants.Kd, constants.Ki, pid_state)
             # adjust move the car
             adjust_move(PID)
         
         if erro is not None:
-            previous_erro = erro
+            constants.previous_erro = erro
             
         # off gren led
         green_led.off()
     red_led.on()
-    # restart the cam memory
-#    cam.release()
-    # restart the motors
-#    disconnect_all_hardware()
 
 if __name__ == '__main__':
-    run_robot_control()
+    gyro_bias_z = calibrate_gyro(200)
