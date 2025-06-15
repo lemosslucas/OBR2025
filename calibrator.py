@@ -26,7 +26,9 @@ def update_camera_feed():
     while True:
         try:
             if cam:
-                img = cam.capture_array()
+                img_cam = cam.capture_array()
+                from robot_control import get_roi
+                img = get_roi(img_cam)
         except Exception as e:
             log(f"Falha ao capturar frame para o feed: {e}")
             time.sleep(0.5)

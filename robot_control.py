@@ -27,9 +27,10 @@ def get_roi(img):
     """
     # para tentar o ROI
     h, w, _ = img.shape
-    
-    slice_point = h // 2 - 60
-    roi = img[slice_point:h, 0:w]
+#   print(f'h={h}, w={w}')
+    slice_point = h // 2 - 120
+    roi = img[slice_point:h, 55:w-55]
+
     return roi
 
 def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
@@ -56,6 +57,7 @@ def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
     """
     P = error
     pid_state['I'] += P
+    log(f'Pid {PID} | Kp: {Kp} | Kd: {Kd} | Ki: {Ki}')
 
     # anti wind up
     if (P > 0 and previous_error < 0) or (P < 0 and previous_error > 0):
@@ -86,13 +88,17 @@ def adjust_move(PID):
     """
 
     # update the velocity values
-    right_velocity = max(0, min(base_right_velocity - PID, 255))
-    left_velocity = max(0, min(base_left_velocity + PID, 255))
+    right_velocity = max(0, min(base_right_velocity + PID, 255))
+    left_velocity = max(0, min(base_left_velocity - PID, 255))
 
+    # verify if the robot is on the ramp
     if read_accelerometer() >= ramp_slope:
-        right_velocity = max(0, min(velocity_ramp, 255))
-        left_velocity = max(0, min(velocity_ramp, 255))
-        
+        log('entrei na rampa')
+
+        # update the vel of the car
+        motors.run(velocity_ramp, velocity_ramp)   
+        time.sleep(0.5)
+    
     # update the vel of the car
     motors.run(right_velocity, left_velocity)
 
@@ -124,7 +130,6 @@ def turn_until_angle(target_angle=90):
 
             # get the angular velocity
             angle_z += data['z'] * delta_time
-            print(f'Angle z {angle_z:.2f}')
             time.sleep(0.01)
         except Exception as e:
             log(f'Deu merda lendo o osciloscopio {e}')
@@ -180,36 +185,44 @@ def avoid_obstacle(cam):
 
     # state 7
     motors.run(0, left_velocity)
-    turn_until_angle(75)
+    turn_until_angle(45)
 
+    # state 8
+    motors.run(right_velocity, left_velocity)
+    time.sleep(0.5)
+
+    #state 9
+    motors.run(right_velocity, 0)
+    turn_until_angle(45)
+    
     log('Desvio feito! Procurando a linha')
     motors.run(150, 150)
 
     # loop with timeout to avoid be trapped forever
-    start_time = time.time()
-    timeout = 2
+    #start_time = time.time()
+    #timeout = 2
 
-    while time.time() - start_time < timeout:
-        # get the img
-        has_frame, img = cam.read()
+    #while time.time() - start_time < timeout:
+    #    # get the img
+    #    has_frame, img = cam.read()
 
         # verify the cam
-        if not has_frame:
-            log("Erro na câmera durante a busca.")
-            break
+    #    if not has_frame:
+    #        log("Erro na câmera durante a busca.")
+    #        break
         
         # resize the image on the scale
-        img = get_roi(img)
+    #    img = get_roi(img)
 
         # verify if found the line
-        erro, _, _ = detect_line(img)
-        if erro is not None:
-            log("Linha reencontrada! voltou.")
-            motors.stop_motor()
-            return
+    #    erro, _, _ = detect_line(img)
+    #    if erro is not None:
+    #        log("Linha reencontrada! voltou.")
+    #        motors.stop_motor()
+    #        return
     
-    log('fudeu, nao achei a linha denovo')
-    motors.stop_motor()
+    #log('fudeu, nao achei a linha denovo')
+    #motors.stop_motor()
 
 def measure_distance():
     """

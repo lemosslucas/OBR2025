@@ -10,8 +10,8 @@ pi = pigpio.pi()
 accelerometer = mpu6050(0x68)
 motors = MotorController()
 
-green_led = LED(23)
-red_led = LED(24)
+green_led = LED(9)
+red_led = LED(10)
 
 # ultrassonic
 try:

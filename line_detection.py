@@ -17,7 +17,6 @@ def calculate_error(target_line):
     Returns:
         int: error in degrees.
     """
-    #print(target_line)
     if isinstance(target_line, tuple):
         target_line = target_line[0]  
 
@@ -143,7 +142,7 @@ def process_image(img):
 
     return binary
 
-def find_curve_side(contours, img_width):
+def find_curve_side(contour, img_width):
     """
     Checks if there is a curve in the image and identifies its direction.
 
@@ -167,21 +166,19 @@ def find_curve_side(contours, img_width):
     # Split the image in 2
     mid = img_width // 2
 
-    for contour in contours:
-        X = contour[:, 0, 0]
+    X = contour[:, 0, 0]
 
-        points_left, points_right = np.sum(X < mid), np.sum(X >= mid)
+    points_left, points_right = np.sum(X < mid), np.sum(X >= mid)
   
-        if points_left > points_right:
-            return LEFT
-        if points_left < points_right:
-            return RIGHT
+    if points_left > points_right:
+        return LEFT
+    if points_left < points_right:
+        return RIGHT
 
 def verify_90_curve(contour):
     """
     """
     if len(contour) < 1:
-        print('cu1')
         return False
     
     # get the heighst and lower point on the contour
@@ -197,7 +194,6 @@ def verify_90_curve(contour):
 
     # ensure one part not has that points
     if len(bottom_points) == 0 or len(top_points) == 0:
-        print('cu2')
         return False 
     
     # calculate the horizontal center
@@ -209,10 +205,8 @@ def verify_90_curve(contour):
 
     # if deviation is soo big, it's a 90° curve
     if deviation > curve_threshold:
-        print('loucura')
         return True
 
-    print('cu3')  
     return False
 
 def analyse_contours(img, contours):
@@ -233,20 +227,20 @@ def analyse_contours(img, contours):
     if len(contours) > 0:
         contour_target = max(contours, key=cv2.contourArea)
         # drawn the line target
-        print(len(contours))
+        #print(len(contours))
 
         cv2.drawContours(img, contours, -1, (0, 0, 255), 2)
         #cv2.drawContours(img, contour_target, -1, (255, 0, 0), 5)
 
         # send img_widht as img.shape[1]
-        has_90_curve = verify_90_curve(contour_target, img.shape[0])
+        has_90_curve = verify_90_curve(contour_target)
         
         # initialize curve_side as false
         curve_side = False
 
         # find the curve side
         if has_90_curve:
-            curve_side = find_curve_side(contour_target)
+            curve_side = find_curve_side(contour_target, img.shape[1])
 
         # calculate the error
         error = calculate_error(contour_target)

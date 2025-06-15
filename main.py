@@ -5,6 +5,7 @@ from robot_control import (measure_distance, avoid_obstacle,
                            adjust_move, calculate_PID, rescue_area, turn_until_angle)
 from logger import log
 from constants import *
+import constants
 import time
 from hardware_setup import red_led, green_led, motors, disconnect_all_hardware
 
@@ -37,7 +38,9 @@ def update_camera_feed():
     while True:
         try:
             # Apenas captura o array e atualiza a variável global
-            img = cam.capture_array()
+            img_cam = cam.capture_array()
+            from robot_control import get_roi
+            img = get_roi(img_cam)
         except Exception as e:
             log(f"Falha ao capturar frame para o feed: {e}")
             # Uma pequena pausa antes de tentar novamente
@@ -49,6 +52,7 @@ def run_robot_control():
 
     # loop to read the cam
     while robot_running:
+        red_led.off()
         # extract the cam info
         if img is None:
             log("Aguardando primeiro frame da camera")
@@ -76,8 +80,6 @@ def run_robot_control():
             log('Avoiding obstacle')
             avoid_obstacle(cam)
         
-        from robot_control import get_roi
-        img = get_roi(img)
         # calculate the error
         erro, is_curve, has_colour = detect_line(img)
         log(f'erro: {erro} | is_curve {is_curve} | has_colour {has_colour}')
@@ -124,7 +126,7 @@ def run_robot_control():
                 elif side_curve == RIGHT:
                     log('90 degree turn on right')
                     motors.turn_left(base_right_velocity, base_left_velocity)
-                    turn_until_angle(-90)
+                    turn_until_angle(90)
 
             elif colour == RED:
                 log('finish line')
@@ -135,7 +137,7 @@ def run_robot_control():
                 break 
         
         # verify if has a curve
-        if is_curve is not None:
+        if is_curve is not False:
             if is_curve is LEFT:
                 log('90 degree turn on left')
                 motors.turn_left(base_right_velocity, base_left_velocity)
@@ -143,8 +145,7 @@ def run_robot_control():
                 log('90 degree turn on right')
                 motors.turn_right(base_right_velocity, base_left_velocity)
         else:
-            PID = calculate_PID(erro, previous_error, Kp, Kd, Ki, pid_state)
-            log(f'Pid {PID}')
+            PID = calculate_PID(erro, previous_error, constants.Kp, constants.Kd, constants.Ki, pid_state)
             # adjust move the car
             adjust_move(PID)
         
@@ -153,11 +154,11 @@ def run_robot_control():
             
         # off gren led
         green_led.off()
-
+    red_led.on()
     # restart the cam memory
-    cam.release()
+#    cam.release()
     # restart the motors
-    disconnect_all_hardware()
+#    disconnect_all_hardware()
 
 if __name__ == '__main__':
     run_robot_control()

@@ -1,6 +1,3 @@
-import time 
-from time import sleep
-
 """
 Component's pins
 """
@@ -33,24 +30,24 @@ RIGHT = 0
 robot_position_x = 0
 
 #velocity
-base_right_velocity = 180
-base_left_velocity = 180
+base_right_velocity = 130
+base_left_velocity =  130 - 10
 
 # define the ramp slope and the upper on the motor to upper the ramp
 ramp_slope = 15 
-velocity_ramp = 20
+velocity_ramp = 200
 
 """
 PID values
 """
-Kp = 1; Ki = 0.01; Kd = 0.1
+Kp = 9; Ki = 0.05; Kd = 0.5
 pid_state = {'I': 0}
 previous_error = 0 
 
 """
 Computer Vision constants
 """
-threshold_value = 133
+threshold_value = 80
 # size of the image
 desired_width = 320
 desired_height = 240
