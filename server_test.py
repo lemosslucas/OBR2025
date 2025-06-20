@@ -53,20 +53,26 @@ def stream_logs():
     
     return Response(stream_with_context(event_stream()), mimetype="text/event-stream")
 
-
+control_thread = None
 @app.route('/start', methods=['POST'])
 def start_robot():
+    global control_thread
+#    if main.robot_running:
+#        log("Tentativa de iniciar robô que já está em execução.")
+#        return jsonify({"status": "already_running"})
+
     log("Robo andando")
     main.robot_running = True
-    t = Thread(target=run_robot_control)
-    t.daemon = True
-    t.start()
+    control_thread = Thread(target=run_robot_control)
+    control_thread.daemon = True
+    control_thread.start()
 
     return jsonify({"status": "started"})
 
 @app.route('/stop', methods=['POST'])
 def stop_robot():
     log("Robo parado")
+    # APENAS ALTERA A FLAG. A THREAD VAI PARAR SOZINHA.
     main.robot_running = False
     main.motors.stop_motor()
     return jsonify({"status": "stopped"})

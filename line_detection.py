@@ -131,7 +131,8 @@ def process_image(img):
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
     # Aplly a threshold to detect only darken colours
-    _, binary = cv2.threshold(img_gray, constants.threshold_value, 255, cv2.THRESH_BINARY_INV)
+    #_, binary = cv2.threshold(img_gray, constants.threshold_value, 255, cv2.THRESH_BINARY_INV)
+    _, binary = cv2.threshold(img_gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
     # reduce the noise
     kernel = np.ones((5, 5), np.uint8)
@@ -229,7 +230,7 @@ def analyse_contours(img, contours):
         # drawn the line target
         #print(len(contours))
 
-        cv2.drawContours(img, contours, -1, (0, 0, 255), 2)
+        #cv2.drawContours(img, contours, -1, (0, 0, 255), 2)
         #cv2.drawContours(img, contour_target, -1, (255, 0, 0), 5)
 
         # send img_widht as img.shape[1]
@@ -248,7 +249,7 @@ def analyse_contours(img, contours):
         return error, curve_side
     return None, None 
 
-def detect_line(img):
+def detect_line(img_processed, img_roi):
     """
     Main function to detect a line in the input image, check for curves, and identify 
     the presence of significant colors (red, green, or gray).
@@ -268,21 +269,21 @@ def detect_line(img):
     """
 
     # verify if img exists
-    if img is None:
+    if img_processed is None:
         return None, None, None
 
     # process the image
-    processed_img = process_image(img)
+    #processed_img = process_image(img)
     
     # Detect points that form a line
-    contours, _ = cv2.findContours(processed_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(img_processed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # verify if has a symbol on the img
-#   color_detected = identify_colour(img)
+#   color_detected = identify_colour(img_roi)
     color_detected = None
 
     # analyse the contours on the image
-    error, curve_side = analyse_contours(img, contours)
+    error, curve_side = analyse_contours(img_processed, contours)
 
     # to avoid false-positive
     if color_detected or curve_side is not False and len(contours) > 0: return 0, curve_side, color_detected
@@ -310,12 +311,11 @@ if __name__ == '__main__':
         print(path + image_name)
         img = cv2.imread(path + image_name)
         #img = cv2.imread(image_name)
-        
-        erro, curve_side, color_detected = detect_line(img)
+        img_processed = process_image(img)
+
+        erro, curve_side, color_detected = detect_line(img_processed, img)
         print(f"Erro: {erro}|isCurve: {curve_side}|has_colour: {color_detected}")
 
         image_name, type_file = image_name.split('.jpg')
         #download_image(img, erro, path, image_name, color_detected, curve_side)
-        #print('The error in degrees:', erro)
-        #print(f"Memory used: {psutil.Process(os.getpid()).memory_info().rss / (1024 ** 2)} MB")
         print('-'*35)

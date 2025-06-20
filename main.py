@@ -1,8 +1,8 @@
 import cv2 
 from picamera2 import Picamera2
-from line_detection import detect_line
-from robot_control import (measure_distance, avoid_obstacle, calibrate_gyro, 
-                           adjust_move, calculate_PID, rescue_area, turn_until_angle)
+from line_detection import detect_line, process_image
+from robot_control import (measure_distance, avoid_obstacle, calibrate_gyro,
+                           adjust_move, calculate_PID, rescue_area, turn_until_angle, led_feedback)
 from logger import log
 from constants import *
 import constants
@@ -15,7 +15,8 @@ img = None
 # init the cam
 try:
     cam = Picamera2()
-    config = cam.create_preview_configuration(main={"size": (desired_width, desired_height)}, controls={"FrameRate": 15})
+    config = cam.create_preview_configuration(main={"size": (desired_width, desired_height)}, 
+                                              controls={"FrameRate": 15})
     cam.configure(config)
     cam.start()
     log('aguardando a inicializacao da camera')
@@ -34,13 +35,14 @@ def update_camera_feed():
     Uma função simples que roda em uma thread separada
     para manter a variável global 'img' sempre atualizada.
     """
-    global img
+    global img, img_roi
     while True:
         try:
             # Apenas captura o array e atualiza a variável global
             img_cam = cam.capture_array()
             from robot_control import get_roi
-            img = get_roi(img_cam)
+            img_roi = get_roi(img_cam)
+            img = process_image(img_roi)
         except Exception as e:
             log(f"Falha ao capturar frame para o feed: {e}")
             # Uma pequena pausa antes de tentar novamente
@@ -54,7 +56,7 @@ def run_robot_control():
 
     # loop to read the cam
     while robot_running:
-        red_led.off()
+        led_feedback(green_led, START_ROBOT)
         # extract the cam info
         if img is None:
             log("Aguardando primeiro frame da camera")
@@ -80,35 +82,47 @@ def run_robot_control():
 
         if distance is not None and distance <= MAX_DISTANCE:
             log('Avoiding obstacle')
-            avoid_obstacle(cam)
+            avoid_obstacle(cam, gyro_bias_z)
         
         # calculate the error
-        erro, is_curve, has_colour = detect_line(img)
+        erro, is_curve, has_colour = detect_line(img, img_roi)
         log(f'erro: {erro} | is_curve {is_curve} | has_colour {has_colour}')
 
         # if not has line it try to come back of line
         if erro is None:
-            # to ensure the robot don't run out the track
-            start_time = time.time()
-            timeout = 2
+            log("Perdeu a linha, deu merda")
+            motors.stop_motor()
+            led_feedback(red_led, LINE_LOST)
 
-            # comeback until find a line 
-            while erro is None or (time.time() - start_time < timeout) and robot_running:
-                log('Lost line')
-                motors.run_backward(base_right_velocity, base_left_velocity)
-                time.sleep(0.05)
-                            
-                # get the error to verify if has back to the line
-                erro, is_curve, has_colour = detect_line(img)
-            
-            if erro is None:
-                # lost the line and stop the motors and the car
-                log("Perdeu a linha, deu merda")
-                motors.stop_motor()
-                robot_running = False
-            
-            log("Robo conseguiu voltar pra linha! ")
-                
+            # function to found the line
+            def search_step(move_function, duration=1.5):
+                start_time = time.time()
+                while time.time() - start_time < duration:
+                    move_function(base_right_velocity, base_left_velocity)
+                    time.sleep(0.01)
+                    erro, _, _ = detect_line(get_current_img(), None) # Só precisa do erro aqui
+                    if erro is not None:
+                        log('Voltamos')
+                        led_feedback(green_led, LINE_FOUND) 
+                        return True
+                return False
+
+            # try forward
+            if search_step(motors.run_backward):
+                continue # Volta pro loop principal
+
+            # try turn right
+            if search_step(motors.turn_right, duration=2.0): 
+                continue
+
+            # try turn left
+            if search_step(motors.turn_left, duration=2.0):
+                continue
+
+            log("Não foi possível recuperar a linha.")
+            motors.stop_motor()
+            red_led.on()
+            robot_running = False    
 
         if has_colour is not None:
             colour, side_curve = has_colour
@@ -116,18 +130,18 @@ def run_robot_control():
             # verify if is going to rescue area
             if colour == GRAY:
                 log('Rescue area detected')
-                rescue_area(cam)
+                #rescue_area(cam)
 
             # verify if has a 90°curve
             elif colour == GREEN:
                 # turn on the correct side
                 if side_curve == LEFT:
                     log('90 degree turn on left')
-                    motors.turn_right(base_right_velocity, base_left_velocity)
+                    motors.run(0, base_left_velocity)
                     turn_until_angle(90, gyro_bias_z=gyro_bias_z)
                 elif side_curve == RIGHT:
                     log('90 degree turn on right')
-                    motors.turn_left(base_right_velocity, base_left_velocity)
+                    motors.run(base_right_velocity, 0)
                     turn_until_angle(90, gyro_bias_z=gyro_bias_z)
 
             elif colour == RED:
@@ -155,10 +169,8 @@ def run_robot_control():
             adjust_move(PID)
         
         if erro is not None:
-            constants.previous_erro = erro
+            constants.previous_error = erro
             
-        # off gren led
-        green_led.off()
     red_led.on()
 
 if __name__ == '__main__':

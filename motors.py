@@ -1,11 +1,11 @@
 import pigpio
 import time
 
-# Motor GPIO pins (inversed)
-MOTOR_LEFT_CLKWISE = 12
-MOTOR_LEFT_ANTI = 18
-MOTOR_RIGHT_CLKWISE = 20
-MOTOR_RIGHT_ANTI = 13
+# Motor GPIO pins (inversed on protoboard)
+MOTOR_LEFT_CLKWISE = 18
+MOTOR_LEFT_ANTI = 12
+MOTOR_RIGHT_CLKWISE = 13
+MOTOR_RIGHT_ANTI = 6
 
 LOW = 0
 

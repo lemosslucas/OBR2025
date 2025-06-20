@@ -6,12 +6,22 @@ from constants import (base_left_velocity,
                        base_right_velocity, ramp_slope, velocity_ramp,
                        servo_arm, servo_shovel, robot_position_x,
                        BALL_FOUND, BALL_NOT_FOUND, BALLS_SAVED, MIN_DISTANCE_BALL,
-                       TRIG, ECHO, ERROR, gyro_bias_z)
+                       TRIG, ECHO, ERROR)
 
 from hardware_setup import motors, pi, accelerometer
 from ball_detection import find_ball
-from line_detection import detect_line
 from logger import log 
+
+def led_feedback(led, times=1):
+    """
+    Função para dar o feedback do robo a partir do LED
+    params: 
+        LED (objeto)
+        times: repeticoes do sinal
+    """
+    for i in range(times):
+        led.on()
+        time.sleep(0.5)
 
 def get_roi(img):
     """
@@ -29,7 +39,7 @@ def get_roi(img):
     h, w, _ = img.shape
 #   print(f'h={h}, w={w}')
     slice_point = h // 2
-    roi = img[slice_point:h, 55:w-55]
+    roi = img[slice_point:h, 60:w-60]
 
     return roi
 
@@ -57,7 +67,6 @@ def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
     """
     P = error
     pid_state['I'] += P
-    log(f'Pid {PID} | Kp: {Kp} | Kd: {Kd} | Ki: {Ki}')
 
     # anti wind up
     if (P > 0 and previous_error < 0) or (P < 0 and previous_error > 0):
@@ -71,6 +80,7 @@ def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
 
     PID = (Kp * P) + (Ki * pid_state['I']) + (Kd * D)
 
+    log(f'Erro {error} | Pid {PID} | Kp: {Kp} | Kd: {Kd} | Ki: {Ki}')
     return PID
 
 def adjust_move(PID):
@@ -88,20 +98,20 @@ def adjust_move(PID):
     """
 
     # update the velocity values
-    right_velocity = max(0, min(base_right_velocity + PID, 255))
-    left_velocity = max(0, min(base_left_velocity - PID, 255))
+    right_velocity = max(0, min(base_right_velocity - PID, 255))
+    left_velocity = max(0, min(base_left_velocity + PID, 255))
 
+    start_time = time.time()
+    timeout = 3
     # verify if the robot is on the ramp
-    if read_accelerometer() >= ramp_slope:
+    while read_accelerometer() >= ramp_slope and (time.time() - start_time < timeout):
         log('entrei na rampa')
-
         # update the vel of the car
         motors.run(velocity_ramp, velocity_ramp)   
-        time.sleep(0.5)
+        time.sleep(0.05)
     
     # update the vel of the car
     motors.run(right_velocity, left_velocity)
-
 
 """
 Accelerometer
@@ -168,7 +178,7 @@ def turn_until_angle(target_angle=90, gyro_bias_z=0):
     print('Rotation finished')
     motors.stop_motor()
 
-def avoid_obstacle(cam):
+def avoid_obstacle(cam, gyro_bias_z):
     """
     Executes a predefined sequence of movements to avoid an obstacle.
     Turning on 
@@ -180,7 +190,6 @@ def avoid_obstacle(cam):
     4. A 90° right turn.
     5. Moves forward for 4 seconds.
     6. A ~75° right turn (to realign to original path).
-    7. Try to find the line again
 
     The function assumes that:
     - `motors.run(right_velocity, left_velocity)` controls the motors.
@@ -228,32 +237,6 @@ def avoid_obstacle(cam):
     
     log('Desvio feito! Procurando a linha')
     motors.run(150, 150)
-
-    # loop with timeout to avoid be trapped forever
-    #start_time = time.time()
-    #timeout = 2
-
-    #while time.time() - start_time < timeout:
-    #    # get the img
-    #    has_frame, img = cam.read()
-
-        # verify the cam
-    #    if not has_frame:
-    #        log("Erro na câmera durante a busca.")
-    #        break
-        
-        # resize the image on the scale
-    #    img = get_roi(img)
-
-        # verify if found the line
-    #    erro, _, _ = detect_line(img)
-    #    if erro is not None:
-    #        log("Linha reencontrada! voltou.")
-    #        motors.stop_motor()
-    #        return
-    
-    #log('fudeu, nao achei a linha denovo')
-    #motors.stop_motor()
 
 def measure_distance():
     """
@@ -406,7 +389,7 @@ def catch_balls_on_rescue_area(img):
 
     # if the robot is so near at the ball it stop and catch the ball
     if y > MIN_DISTANCE_BALL:
-        motors.stop()
+        motors.stop_motor()
 
         # catch the ball
         pi.set_servo_pulsewidth(servo_arm, angle_to_pulse(45))
@@ -443,7 +426,7 @@ def search_balls_on_rescue_area(img, start_search):
     
     if x is not None or y is not None:
         # stop the car on position where has a balls
-        motors.stop()
+        motors.stop_motor()
 
         # return ball was found and start_search time
         return True, start_search
