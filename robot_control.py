@@ -116,7 +116,6 @@ def adjust_move(PID):
 """
 Accelerometer
 """
-# Adicione esta função em robot_control.py
 def calibrate_gyro(samples=200):
     """
     Mede o desvio (bias) do giroscópio no eixo Z quando o robô está parado.
@@ -174,10 +173,12 @@ def turn_until_angle(target_angle=90, gyro_bias_z=0):
             time.sleep(0.01)
         except Exception as e:
             log(f'Deu merda lendo o osciloscopio {e}')
+            break
     
-    print('Rotation finished')
     motors.stop_motor()
-
+    print('Rotation finished')
+    time.sleep(0.2)
+    
 def avoid_obstacle(cam, gyro_bias_z):
     """
     Executes a predefined sequence of movements to avoid an obstacle.

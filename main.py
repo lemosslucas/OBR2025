@@ -7,7 +7,7 @@ from logger import log
 from constants import *
 import constants
 import time
-from hardware_setup import red_led, green_led, motors, disconnect_all_hardware
+from hardware_setup import red_led, green_led, motors, disconnect_all_hardware, headlight
 
 robot_running = True
 img = None
@@ -54,6 +54,9 @@ def run_robot_control():
     # define global variables
     global robot_running, img
 
+    # turn on the headlight
+    headlight.on()
+
     # loop to read the cam
     while robot_running:
         led_feedback(green_led, START_ROBOT)
@@ -98,13 +101,17 @@ def run_robot_control():
             def search_step(move_function, duration=1.5):
                 start_time = time.time()
                 while time.time() - start_time < duration:
-                    move_function(base_right_velocity, base_left_velocity)
-                    time.sleep(0.01)
-                    erro, _, _ = detect_line(get_current_img(), None) # Só precisa do erro aqui
+                    erro, _, _ = detect_line(get_current_img(), None)
+                    # ensure the robot has back on the line
                     if erro is not None:
                         log('Voltamos')
+                        motors.stop_motor()
                         led_feedback(green_led, LINE_FOUND) 
                         return True
+                    
+                    move_function(base_right_velocity, base_left_velocity)
+                    time.sleep(0.05)
+                    
                 return False
 
             # try forward
@@ -170,7 +177,9 @@ def run_robot_control():
         
         if erro is not None:
             constants.previous_error = erro
-            
+
+    # turn off the leds
+    headlight.off()   
     red_led.on()
 
 if __name__ == '__main__':
