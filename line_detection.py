@@ -131,8 +131,8 @@ def process_image(img):
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
     # Aplly a threshold to detect only darken colours
-    #_, binary = cv2.threshold(img_gray, constants.threshold_value, 255, cv2.THRESH_BINARY_INV)
-    _, binary = cv2.threshold(img_gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    _, binary = cv2.threshold(img_gray, constants.threshold_value, 255, cv2.THRESH_BINARY_INV)
+#    _, binary = cv2.threshold(img_gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
     # reduce the noise
     kernel = np.ones((5, 5), np.uint8)

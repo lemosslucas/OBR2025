@@ -12,7 +12,6 @@ motors = MotorController()
 
 green_led = LED(9)
 red_led = LED(10)
-headlight = LED(5) # conferir a porta
 
 # ultrassonic
 try:

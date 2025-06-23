@@ -157,7 +157,7 @@ def turn_until_angle(target_angle=90, gyro_bias_z=0):
     angle_z = 0
     start_time = time.time()
 
-    log(f'Começando o giro de {target_angle}')
+#    log(f'Começando o giro de {target_angle}')
 
     while abs(angle_z) < target_angle:
         try:

@@ -7,7 +7,7 @@ from logger import log
 from constants import *
 import constants
 import time
-from hardware_setup import red_led, green_led, motors, disconnect_all_hardware, headlight
+from hardware_setup import red_led, green_led, motors, disconnect_all_hardware
 
 robot_running = True
 img = None
@@ -54,9 +54,6 @@ def run_robot_control():
     # define global variables
     global robot_running, img
 
-    # turn on the headlight
-    headlight.on()
-
     # loop to read the cam
     while robot_running:
         led_feedback(green_led, START_ROBOT)
@@ -68,11 +65,12 @@ def run_robot_control():
 
         # verify if has an object on front
         distance_tries = 0
-        distance = measure_distance()
+        #distance = measure_distance()
+        distance =  20
 
         # read the distance 3 times
         while distance_tries <= 3:
-            distance = measure_distance()
+            #distance = measure_distance()
             # verify if has error on the read
             if distance == ERROR:
                 log('Erro na leitura do ultrassonico')
@@ -115,7 +113,7 @@ def run_robot_control():
                 return False
 
             # try forward
-            if search_step(motors.run_backward):
+            if search_step(motors.run_backward, duration=2.0):
                 continue # Volta pro loop principal
 
             # try turn right
@@ -148,7 +146,8 @@ def run_robot_control():
                     turn_until_angle(90, gyro_bias_z=gyro_bias_z)
                 elif side_curve == RIGHT:
                     log('90 degree turn on right')
-                    motors.run(base_right_velocity, 0)
+#                    motors.run(base_right_velocity, 0)
+                    motors.turn_right(255, 255)
                     turn_until_angle(90, gyro_bias_z=gyro_bias_z)
 
             elif colour == RED:
@@ -168,8 +167,18 @@ def run_robot_control():
                 turn_until_angle(90, gyro_bias_z=gyro_bias_z)
             elif is_curve is RIGHT:
                 log('90 degree turn on right')
+                # tenho q formatar melhor isso
+                while(erro != None):
+                    erro, _, _ =  detect_line(get_current_img(), None)
+                    motors.run(base_right_velocity, base_left_velocity)
+                    print('esperando o memomento pra virar')
+                print('achei')
+                motors.stop_motor()
+                time.sleep(1)
                 motors.turn_right(base_right_velocity, base_left_velocity)
                 turn_until_angle(90, gyro_bias_z=gyro_bias_z)
+                motors.stop_motor()
+                time.sleep(1)
         else:
             PID = calculate_PID(erro, constants.previous_error, constants.Kp, constants.Kd, constants.Ki, pid_state)
             # adjust move the car
@@ -179,7 +188,6 @@ def run_robot_control():
             constants.previous_error = erro
 
     # turn off the leds
-    headlight.off()   
     red_led.on()
 
 if __name__ == '__main__':

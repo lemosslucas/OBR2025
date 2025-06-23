@@ -36,8 +36,8 @@ RIGHT = 0
 robot_position_x = 0
 
 #velocity
-base_right_velocity = 140
-base_left_velocity =  140 - DIFF_MOTOR
+base_right_velocity = 170
+base_left_velocity =  170 - DIFF_MOTOR
 
 # define the ramp slope and the upper on the motor to upper the ramp
 ramp_slope = 15 
@@ -53,7 +53,7 @@ previous_error = 0
 """
 Computer Vision constants
 """
-threshold_value = 80
+threshold_value =  56
 # size of the image
 desired_width = 320
 desired_height = 240

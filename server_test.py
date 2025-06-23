@@ -27,7 +27,7 @@ def generate_frames():
             continue
 
         # Codifica o frame como JPEG sem nenhum processamento
-        ret, buffer = cv2.imencode('.jpg', frame)
+        ret, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 40])
         frame = buffer.tobytes()
 
         # Envia o frame como multipart HTTP
