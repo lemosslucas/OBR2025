@@ -11,6 +11,7 @@ from constants import (base_left_velocity,
 from hardware_setup import motors, pi, accelerometer
 from ball_detection import find_ball
 from logger import log 
+from line_detection import detect_line
 
 def led_feedback(led, times=1):
     """
@@ -113,16 +114,45 @@ def adjust_move(PID):
     # update the vel of the car
     motors.run(right_velocity, left_velocity)
 
+# function to found the line
+def try_comeback_line(move_function, get_current_img, duration=1.5):
+    """
+    Attempts to recover the line after it has been lost by moving the robot for a fixed duration.
+
+    During the specified time window, the robot continuously checks for the presence of the line.
+    If the line is detected again, the robot stops and the function returns success.
+
+    Parameters:
+        move_function (function): A function that drives the robot (e.g., backward or turning).
+        get_current_img (function): A function that returns the current image frame for line detection.
+        duration (float, optional): Maximum time in seconds to try recovering the line. Default is 1.5 seconds.
+
+    Returns:
+        bool: True if the line was successfully recovered, False otherwise.
+    """
+    start_time = time.time()
+    while time.time() - start_time < duration:
+        erro, _, _ = detect_line(get_current_img(), None)
+        # ensure the robot has back on the line
+        if erro is not None:
+            log('Voltamos')
+            motors.stop_motor() 
+            return True
+        
+        move_function(base_right_velocity, base_left_velocity)
+        time.sleep(0.05)
+        
+    return False
 """
 Accelerometer
 """
-def calibrate_gyro(samples=200):
+def calibrate_gyro(samples=400):
     """
-    Mede o desvio (bias) do giroscópio no eixo Z quando o robô está parado.
+    Measure the deviation (bias) of giroscope on Z label when the robot is stopped.
     params:
-        samples: numero de medicoes
+        samples: number of measurement
     return:
-        float: desvio do giroscopio no eixo Z
+        float: deviation on Z label
     """
     log("Calibrando o giroscópio... Mantenha o robô parado.")
     sum_gz = 0
@@ -139,6 +169,49 @@ def calibrate_gyro(samples=200):
     log(f"Calibração concluída. Bias do Giroscópio (Gz) = {bias_gz:.4f}")
 
     return bias_gz
+
+def turn_90(turn_function, gyro_bias_z, get_current_img):
+    """
+    Executes a 90-degree turn maneuver using a specified turn function and gyroscope feedback.
+
+    The maneuver consists of four steps:
+        1. Move forward until the line is lost.
+        2. Stop the motors and wait briefly.
+        3. Execute a 90-degree turn using the provided turn function and gyroscope feedback.
+        4. Stop the motors again and wait before resuming the main path.
+
+    This function uses a timeout to prevent infinite loops during the initial line loss detection phase.
+
+    Parameters:
+        turn_function (function): A function responsible for initiating the motor turn motion.
+        gyro_bias_z (float): The gyroscope Z-axis bias used to calculate angular displacement.
+        get_current_img (function): A function that returns the current camera image for line detection.
+    """
+    # timeout to avoid infite loop
+    start_time = time.time()
+    timeout = 5.0
+
+    # go to lost the line
+    erro, _, _ =  detect_line(get_current_img(), None)
+    while erro is not None and (time.time() - start_time) < timeout:
+        erro, _, _ =  detect_line(get_current_img(), None)
+        motors.run(base_right_velocity, base_left_velocity)
+        time.sleep(0.05)
+    print('achei')
+
+    # stop the motors: 2 move
+    motors.stop_motor()
+    time.sleep(0.5)
+    
+    # turn on the side 
+    log(f"Executando curva de 90 graus usando {turn_function.__name__}...")
+    turn_function(base_right_velocity, base_left_velocity)
+    turn_until_angle(90, gyro_bias_z=gyro_bias_z)
+    
+    # Stop the motors: 4 move
+    motors.stop_motor()
+    time.sleep(0.5)
+    log('curva de 90 feita')
 
 def turn_until_angle(target_angle=90, gyro_bias_z=0):
     """

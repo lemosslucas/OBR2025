@@ -2,7 +2,7 @@ import cv2
 from picamera2 import Picamera2
 from line_detection import detect_line, process_image
 from robot_control import (measure_distance, avoid_obstacle, calibrate_gyro,
-                           adjust_move, calculate_PID, rescue_area, turn_until_angle, led_feedback)
+                           adjust_move, calculate_PID, led_feedback, turn_90, try_comeback_line)
 from logger import log
 from constants import *
 import constants
@@ -65,12 +65,12 @@ def run_robot_control():
 
         # verify if has an object on front
         distance_tries = 0
-        #distance = measure_distance()
+        distance = measure_distance()
         distance =  20
 
         # read the distance 3 times
         while distance_tries <= 3:
-            #distance = measure_distance()
+            distance = measure_distance()
             # verify if has error on the read
             if distance == ERROR:
                 log('Erro na leitura do ultrassonico')
@@ -95,33 +95,19 @@ def run_robot_control():
             motors.stop_motor()
             led_feedback(red_led, LINE_LOST)
 
-            # function to found the line
-            def search_step(move_function, duration=1.5):
-                start_time = time.time()
-                while time.time() - start_time < duration:
-                    erro, _, _ = detect_line(get_current_img(), None)
-                    # ensure the robot has back on the line
-                    if erro is not None:
-                        log('Voltamos')
-                        motors.stop_motor()
-                        led_feedback(green_led, LINE_FOUND) 
-                        return True
-                    
-                    move_function(base_right_velocity, base_left_velocity)
-                    time.sleep(0.05)
-                    
-                return False
-
             # try forward
-            if search_step(motors.run_backward, duration=2.0):
+            if try_comeback_line(motors.run_backward, get_current_img, duration=2.0):
+                led_feedback(green_led, LINE_FOUND)
                 continue # Volta pro loop principal
 
             # try turn right
-            if search_step(motors.turn_right, duration=2.0): 
+            if try_comeback_line(motors.turn_right, get_current_img, duration=2.0):
+                led_feedback(green_led, LINE_FOUND) 
                 continue
 
             # try turn left
-            if search_step(motors.turn_left, duration=2.0):
+            if try_comeback_line(motors.turn_left, get_current_img, duration=2.0):
+                led_feedback(green_led, LINE_FOUND)
                 continue
 
             log("Não foi possível recuperar a linha.")
@@ -142,13 +128,10 @@ def run_robot_control():
                 # turn on the correct side
                 if side_curve == LEFT:
                     log('90 degree turn on left')
-                    motors.run(0, base_left_velocity)
-                    turn_until_angle(90, gyro_bias_z=gyro_bias_z)
+                    turn_90(motors.turn_left, gyro_bias_z, get_current_img)
                 elif side_curve == RIGHT:
                     log('90 degree turn on right')
-#                    motors.run(base_right_velocity, 0)
-                    motors.turn_right(255, 255)
-                    turn_until_angle(90, gyro_bias_z=gyro_bias_z)
+                    turn_90(motors.turn_right, gyro_bias_z, get_current_img)
 
             elif colour == RED:
                 log('finish line')
@@ -163,22 +146,12 @@ def run_robot_control():
         if is_curve is not False:
             if is_curve is LEFT:
                 log('90 degree turn on left')
-                motors.turn_left(base_right_velocity, base_left_velocity)
-                turn_until_angle(90, gyro_bias_z=gyro_bias_z)
+                turn_90(motors.turn_left, gyro_bias_z, get_current_img)
+                
             elif is_curve is RIGHT:
                 log('90 degree turn on right')
-                # tenho q formatar melhor isso
-                while(erro != None):
-                    erro, _, _ =  detect_line(get_current_img(), None)
-                    motors.run(base_right_velocity, base_left_velocity)
-                    print('esperando o memomento pra virar')
-                print('achei')
-                motors.stop_motor()
-                time.sleep(1)
-                motors.turn_right(base_right_velocity, base_left_velocity)
-                turn_until_angle(90, gyro_bias_z=gyro_bias_z)
-                motors.stop_motor()
-                time.sleep(1)
+                turn_90(motors.turn_right, gyro_bias_z, get_current_img)
+                
         else:
             PID = calculate_PID(erro, constants.previous_error, constants.Kp, constants.Kd, constants.Ki, pid_state)
             # adjust move the car
