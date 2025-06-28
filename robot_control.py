@@ -4,9 +4,9 @@ import time
 
 from constants import (base_left_velocity,
                        base_right_velocity, ramp_slope, velocity_ramp,
-                       servo_arm, servo_shovel, robot_position_x,
+                       servo_arm, servo_shovel, robot_position_x, curve_velocity,
                        BALL_FOUND, BALL_NOT_FOUND, BALLS_SAVED, MIN_DISTANCE_BALL,
-                       TRIG, ECHO, ERROR)
+                       TRIG, ECHO, ERROR, FRAMES_TO_LOST,)
 
 from hardware_setup import motors, pi, accelerometer
 from ball_detection import find_ball
@@ -84,7 +84,7 @@ def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
     log(f'Erro {error} | Pid {PID} | Kp: {Kp} | Kd: {Kd} | Ki: {Ki}')
     return PID
 
-def adjust_move(PID):
+def adjust_move(PID, is_ramp=False):
     """
     Adjusts the velocity of the robot's motors based on the PID output.
 
@@ -98,19 +98,15 @@ def adjust_move(PID):
                      A positive PID value decreases the right velocity and increases the left velocity.
     """
 
-    # update the velocity values
-    right_velocity = max(0, min(base_right_velocity - PID, 255))
-    left_velocity = max(0, min(base_left_velocity + PID, 255))
-
-    start_time = time.time()
-    timeout = 3
-    # verify if the robot is on the ramp
-    while read_accelerometer() >= ramp_slope and (time.time() - start_time < timeout):
-        log('entrei na rampa')
-        # update the vel of the car
-        motors.run(velocity_ramp, velocity_ramp)   
-        time.sleep(0.05)
-    
+    if is_ramp:
+        # update the velocity values
+        right_velocity = max(0, min(velocity_ramp - PID, 255))
+        left_velocity = max(0, min(velocity_ramp + PID, 255))
+    else:
+        # update the velocity values
+        right_velocity = max(0, min(base_right_velocity - PID, 255))
+        left_velocity = max(0, min(base_left_velocity + PID, 255))
+ 
     # update the vel of the car
     motors.run(right_velocity, left_velocity)
 
@@ -130,8 +126,15 @@ def try_comeback_line(move_function, get_current_img, duration=1.5):
     Returns:
         bool: True if the line was successfully recovered, False otherwise.
     """
+    # stop the motors
+    motors.stop_motor()
+    time.sleep(0.3)
+
+    # count the start time 
     start_time = time.time()
+
     while time.time() - start_time < duration:
+        # to avoid a color detec_error
         erro, _, _ = detect_line(get_current_img(), None)
         # ensure the robot has back on the line
         if erro is not None:
@@ -141,7 +144,8 @@ def try_comeback_line(move_function, get_current_img, duration=1.5):
         
         move_function(base_right_velocity, base_left_velocity)
         time.sleep(0.05)
-        
+    
+    motors.stop_motor()
     return False
 """
 Accelerometer
@@ -170,6 +174,32 @@ def calibrate_gyro(samples=400):
 
     return bias_gz
 
+def verify_lost_line(get_current_img):
+    """
+    """
+    # timeout to avoid infite loop
+    start_time = time.time()
+    timeout = 5.0
+    line_lost_count = 0
+
+    while (time.time() - start_time) < timeout:
+        erro, _, _ =  detect_line(get_current_img(), None)
+
+        # add a counter to avoid false-positive
+        if erro is None:
+            line_lost_count += 1
+
+        if line_lost_count >= FRAMES_TO_LOST:
+            return True
+        
+        # run until lost the line or the time finsih
+        motors.run(base_right_velocity, base_left_velocity)
+        time.sleep(0.05)
+        
+    print('achei a linha')
+    # line was not lost
+    return False
+
 def turn_90(turn_function, gyro_bias_z, get_current_img):
     """
     Executes a 90-degree turn maneuver using a specified turn function and gyroscope feedback.
@@ -187,31 +217,22 @@ def turn_90(turn_function, gyro_bias_z, get_current_img):
         gyro_bias_z (float): The gyroscope Z-axis bias used to calculate angular displacement.
         get_current_img (function): A function that returns the current camera image for line detection.
     """
-    # timeout to avoid infite loop
-    start_time = time.time()
-    timeout = 5.0
-
-    # go to lost the line
-    erro, _, _ =  detect_line(get_current_img(), None)
-    while erro is not None and (time.time() - start_time) < timeout:
-        erro, _, _ =  detect_line(get_current_img(), None)
-        motors.run(base_right_velocity, base_left_velocity)
-        time.sleep(0.05)
-    print('achei')
-
-    # stop the motors: 2 move
-    motors.stop_motor()
-    time.sleep(0.5)
-    
-    # turn on the side 
-    log(f"Executando curva de 90 graus usando {turn_function.__name__}...")
-    turn_function(base_right_velocity, base_left_velocity)
-    turn_until_angle(90, gyro_bias_z=gyro_bias_z)
-    
-    # Stop the motors: 4 move
-    motors.stop_motor()
-    time.sleep(0.5)
-    log('curva de 90 feita')
+    if verify_lost_line(get_current_img):
+        # stop the motors: 2 move
+        motors.stop_motor()
+        time.sleep(0.5)
+        
+        # turn on the side 
+        log(f"Executando curva de 90 graus usando {turn_function.__name__}...")
+        turn_function(curve_velocity, curve_velocity)
+        turn_until_angle(90, gyro_bias_z=gyro_bias_z)
+        
+        # Stop the motors: 4 move
+        motors.stop_motor()
+        time.sleep(0.5)
+        log('curva de 90 feita')
+    else:
+        log('era uma intersecao')
 
 def turn_until_angle(target_angle=90, gyro_bias_z=0):
     """
@@ -230,8 +251,6 @@ def turn_until_angle(target_angle=90, gyro_bias_z=0):
     angle_z = 0
     start_time = time.time()
 
-#    log(f'Começando o giro de {target_angle}')
-
     while abs(angle_z) < target_angle:
         try:
             data = accelerometer.get_gyro_data()
@@ -246,7 +265,8 @@ def turn_until_angle(target_angle=90, gyro_bias_z=0):
             time.sleep(0.01)
         except Exception as e:
             log(f'Deu merda lendo o osciloscopio {e}')
-            break
+            motors.stop_motor()
+            return
     
     motors.stop_motor()
     print('Rotation finished')

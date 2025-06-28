@@ -18,6 +18,8 @@ ERROR = -1
 TIME_OUT_SEARCH = 1
 DIFF_MOTOR = 10
 
+FRAMES_TO_LOST = 5
+
 # constants for led signals
 LINE_LOST = 2
 START_ROBOT = 1
@@ -31,6 +33,7 @@ RED = 3
 # define the side curve values references
 LEFT = 1
 RIGHT = 0
+DEAD_END = 2
 
 # standard position of robot on axis-labels
 robot_position_x = 0
@@ -38,6 +41,7 @@ robot_position_x = 0
 #velocity
 base_right_velocity = 170
 base_left_velocity =  170 - DIFF_MOTOR
+curve_velocity = 200
 
 # define the ramp slope and the upper on the motor to upper the ramp
 ramp_slope = 15 
@@ -58,6 +62,7 @@ threshold_value =  56
 desired_width = 320
 desired_height = 240
 
+MIN_AREA_GREEN = 100
 curve_threshold = 50
 
 def update_constants(kp=None, ki=None, kd=None, threshold=None):

@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import os 
 
-from constants import GRAY, GREEN, RED, LEFT, RIGHT, curve_threshold
+from constants import GRAY, GREEN, RED, LEFT, RIGHT, curve_threshold, MIN_AREA_GREEN, DEAD_END
 import constants
 
 def calculate_error(target_line):
@@ -59,6 +59,9 @@ def identify_colour(img):
     int or None: The detected color with the largest area (RED, GREEN, or GRAY), or None 
                  if no significant color region is foun
     """
+    if img is None: 
+        return None
+    
     # convert image in HSV scale
     hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     
@@ -73,6 +76,7 @@ def identify_colour(img):
     kernel = np.ones((3, 3), np.uint8)
     # create a dict to storage the colours
     detected_areas = {}
+    colors_contours = {}
 
     # find colours
     for color, ranges in color_ranges.items():
@@ -83,6 +87,7 @@ def identify_colour(img):
         
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         detected_areas[color] = sum(cv2.contourArea(c) for c in contours)
+        colors_contours[color] = contours
 
         if contours:
             # drawn the contours in black colour
@@ -92,28 +97,41 @@ def identify_colour(img):
         dominant_color = max(detected_areas, key=detected_areas.get) 
         
         if dominant_color == GREEN:
-            # split the image in two sides
-            mid = img.shape[1] // 2
+            green_contours = colors_contours[GREEN]
             
-            # create a green mask 
-            green_mask = np.bitwise_or.reduce([cv2.inRange(hsv_img, lower, upper) for lower, upper in color_ranges[GREEN]])
+            squares = [c for c in green_contours if cv2.contourArea(c) > MIN_AREA_GREEN]
+            num_squares = len(squares)
+
+            # debug so
+            #cv2.drawContours(img, squares, -1, (0, 255, 0), 2)
+
+            if num_squares >= 2:
+                print('beco sem saida')
+                return dominant_color, DEAD_END
             
-            # calculate moments of image
-            moments = cv2.moments(green_mask)
-            
-            # find the center of object
-            cX = int(moments["m10"] / moments["m00"])
-            
-            # find the side
-            side = LEFT if cX < mid else RIGHT
-            
-            # return the green colour and your side
-            return dominant_color, side
+            elif num_squares == 1:
+                # split the image in two sides
+                mid = img.shape[1] // 2
+
+                # calculate moments of image
+                moments = cv2.moments(squares[0])
+                
+                if moments['m00'] != 0:
+                    # find the center of object
+                    cX = int(moments["m10"] / moments["m00"])
+                    
+                    # find the side
+                    side = LEFT if cX < mid else RIGHT  
+
+                    # return the green colour and your side
+                    return dominant_color, side
+                
+                return None, None
         
         # return the colour with most area on the image
         return dominant_color, None
     # return none if not has colour in the image
-    return None
+    return None, None
 
 def process_image(img):
     """
@@ -204,6 +222,7 @@ def verify_90_curve(contour):
     # calculate the deviation
     deviation = abs(center_top_x - center_bottom_x)
 
+    print('thershold curva ({deviation})')
     # if deviation is soo big, it's a 90° curve
     if deviation > curve_threshold:
         return True

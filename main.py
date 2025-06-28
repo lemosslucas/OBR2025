@@ -2,7 +2,8 @@ import cv2
 from picamera2 import Picamera2
 from line_detection import detect_line, process_image
 from robot_control import (measure_distance, avoid_obstacle, calibrate_gyro,
-                           adjust_move, calculate_PID, led_feedback, turn_90, try_comeback_line)
+                           adjust_move, calculate_PID, led_feedback, turn_90, try_comeback_line,
+                           turn_until_angle, read_accelerometer)
 from logger import log
 from constants import *
 import constants
@@ -98,8 +99,8 @@ def run_robot_control():
             # try forward
             if try_comeback_line(motors.run_backward, get_current_img, duration=2.0):
                 led_feedback(green_led, LINE_FOUND)
-                continue # Volta pro loop principal
-
+                continue 
+                
             # try turn right
             if try_comeback_line(motors.turn_right, get_current_img, duration=2.0):
                 led_feedback(green_led, LINE_FOUND) 
@@ -132,6 +133,11 @@ def run_robot_control():
                 elif side_curve == RIGHT:
                     log('90 degree turn on right')
                     turn_90(motors.turn_right, gyro_bias_z, get_current_img)
+                elif side_curve == DEAD_END:
+                    log('beco sem saida')
+                    motors.turn_left(curve_velocity, curve_velocity)
+                    turn_until_angle(180, gyro_bias_z)
+                
 
             elif colour == RED:
                 log('finish line')
@@ -154,11 +160,16 @@ def run_robot_control():
                 
         else:
             PID = calculate_PID(erro, constants.previous_error, constants.Kp, constants.Kd, constants.Ki, pid_state)
-            # adjust move the car
-            adjust_move(PID)
-        
-        if erro is not None:
-            constants.previous_error = erro
+            
+            # verify if the robot is on the ramp and adjust the velociry
+            if read_accelerometer() >= ramp_slope:
+                adjust_move(PID, is_ramp=True)
+            else:
+                # adjust move the car
+                adjust_move(PID)
+            
+            if erro is not None:
+                constants.previous_error = erro
 
     # turn off the leds
     red_led.on()
