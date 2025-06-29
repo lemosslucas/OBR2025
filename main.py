@@ -8,7 +8,7 @@ from logger import log
 from constants import *
 import constants
 import time
-from hardware_setup import red_led, green_led, motors, disconnect_all_hardware
+from hardware_setup import red_led, green_led, motors, disconnect_all_hardware, pi
 
 robot_running = True
 img = None
@@ -27,6 +27,10 @@ try:
 except RuntimeError as e:
     log('Deu erro na camera')
     red_led.on()
+except IndexError as e:
+    log('deu erro')
+    red_led.on()
+
 
 def get_current_img():
     return img
@@ -49,7 +53,22 @@ def update_camera_feed():
             # Uma pequena pausa antes de tentar novamente
             time.sleep(0.5)
 
-gyro_bias_z = calibrate_gyro(200)
+def toggle_robot_state():
+    global robot_running
+    # Inverte o estado (True -> False, False -> True)
+    robot_running = not robot_running 
+    
+    if robot_running:
+        log("Btn pressionado, ligando")
+        led_feedback(green_led, START_ROBOT)
+        red_led.off()
+    else:
+        log("Btn pressionado, parando")
+        motors.stop_motor()
+        red_led.on()
+
+pi.callback(BTN_PIN, pi.FALLING_EDGE, toggle_robot_state)
+gyro_bias_z = calibrate_gyro(300)
 
 def run_robot_control():
     # define global variables
@@ -57,7 +76,6 @@ def run_robot_control():
 
     # loop to read the cam
     while robot_running:
-        led_feedback(green_led, START_ROBOT)
         # extract the cam info
         if img is None:
             log("Aguardando primeiro frame da camera")
@@ -67,7 +85,6 @@ def run_robot_control():
         # verify if has an object on front
         distance_tries = 0
         distance = measure_distance()
-        distance =  20
 
         # read the distance 3 times
         while distance_tries <= 3:
@@ -91,13 +108,14 @@ def run_robot_control():
         log(f'erro: {erro} | is_curve {is_curve} | has_colour {has_colour}')
 
         # if not has line it try to come back of line
+        
         if erro is None:
             log("Perdeu a linha, deu merda")
             motors.stop_motor()
             led_feedback(red_led, LINE_LOST)
 
             # try forward
-            if try_comeback_line(motors.run_backward, get_current_img, duration=2.0):
+            if try_comeback_line(motors.run_backward, get_current_img, duration=0.5):
                 led_feedback(green_led, LINE_FOUND)
                 continue 
                 
@@ -115,6 +133,7 @@ def run_robot_control():
             motors.stop_motor()
             red_led.on()
             robot_running = False    
+            
 
         if has_colour is not None:
             colour, side_curve = has_colour
@@ -160,9 +179,11 @@ def run_robot_control():
                 
         else:
             PID = calculate_PID(erro, constants.previous_error, constants.Kp, constants.Kd, constants.Ki, pid_state)
-            
+            angulo = read_accelerometer()
+            print(angulo)
+
             # verify if the robot is on the ramp and adjust the velociry
-            if read_accelerometer() >= ramp_slope:
+            if angulo >= ramp_slope:
                 adjust_move(PID, is_ramp=True)
             else:
                 # adjust move the car
@@ -176,3 +197,13 @@ def run_robot_control():
 
 if __name__ == '__main__':
     gyro_bias_z = calibrate_gyro(200)
+    try:
+        while True:
+            # if true, run the contol.
+            if robot_running:
+                run_robot_control()
+
+    except KeyboardInterrupt:
+        log("parei pelo teclado")
+    finally:
+        disconnect_all_hardware()

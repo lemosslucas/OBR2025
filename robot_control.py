@@ -22,7 +22,10 @@ def led_feedback(led, times=1):
     """
     for i in range(times):
         led.on()
-        time.sleep(0.5)
+        time.sleep(0.1)
+        led.off()
+        time.sleep(0.1)
+    led.off()
 
 def get_roi(img):
     """
@@ -39,7 +42,7 @@ def get_roi(img):
     # para tentar o ROI
     h, w, _ = img.shape
 #   print(f'h={h}, w={w}')
-    slice_point = h // 2
+    slice_point = h // 2 
     roi = img[slice_point:h, 60:w-60]
 
     return roi
@@ -106,6 +109,8 @@ def adjust_move(PID, is_ramp=False):
         # update the velocity values
         right_velocity = max(0, min(base_right_velocity - PID, 255))
         left_velocity = max(0, min(base_left_velocity + PID, 255))
+
+    print(left_velocity, right_velocity)
  
     # update the vel of the car
     motors.run(right_velocity, left_velocity)
@@ -132,17 +137,22 @@ def try_comeback_line(move_function, get_current_img, duration=1.5):
 
     # count the start time 
     start_time = time.time()
+    t = 0
 
     while time.time() - start_time < duration:
+        if t >= FRAMES_TO_LOST:
+            return True
+        print(f"tentativa {t}")
         # to avoid a color detec_error
         erro, _, _ = detect_line(get_current_img(), None)
         # ensure the robot has back on the line
         if erro is not None:
             log('Voltamos')
             motors.stop_motor() 
-            return True
+            t+=1
+            #return True
         
-        move_function(base_right_velocity, base_left_velocity)
+        move_function(curve_velocity, curve_velocity)
         time.sleep(0.05)
     
     motors.stop_motor()
@@ -187,9 +197,13 @@ def verify_lost_line(get_current_img):
 
         # add a counter to avoid false-positive
         if erro is None:
+            print(line_lost_count)
             line_lost_count += 1
+        else:
+            line_lost_count = 0
 
         if line_lost_count >= FRAMES_TO_LOST:
+            print('perdeu a linha')
             return True
         
         # run until lost the line or the time finsih
@@ -218,18 +232,16 @@ def turn_90(turn_function, gyro_bias_z, get_current_img):
         get_current_img (function): A function that returns the current camera image for line detection.
     """
     if verify_lost_line(get_current_img):
+        time.sleep(0.8)
+        
         # stop the motors: 2 move
         motors.stop_motor()
         time.sleep(0.5)
-        
+
         # turn on the side 
-        log(f"Executando curva de 90 graus usando {turn_function.__name__}...")
         turn_function(curve_velocity, curve_velocity)
         turn_until_angle(90, gyro_bias_z=gyro_bias_z)
         
-        # Stop the motors: 4 move
-        motors.stop_motor()
-        time.sleep(0.5)
         log('curva de 90 feita')
     else:
         log('era uma intersecao')
@@ -270,7 +282,7 @@ def turn_until_angle(target_angle=90, gyro_bias_z=0):
     
     motors.stop_motor()
     print('Rotation finished')
-    time.sleep(0.2)
+    time.sleep(0.5)
     
 def avoid_obstacle(cam, gyro_bias_z):
     """

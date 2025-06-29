@@ -6,42 +6,39 @@ import os
 from constants import GRAY, GREEN, RED, LEFT, RIGHT, curve_threshold, MIN_AREA_GREEN, DEAD_END
 import constants
 
-def calculate_error(target_line):
+def calculate_error(target_line, img_width):
     """
-    Calculates the error between the target line position and the car flow line position.
+    Calculates the positional error between the center of the image and the
+    centroid of the target line.
 
     Args:
-        target_line (list): List containing the coordinates of the detected target line.
-        start_point_flow (int): X-axis starting position of the car flow line.
+        target_line (numpy.ndarray): The contour of the detected line.
+        img_width (int): The width of the camera image.
 
     Returns:
-        int: error in degrees.
+        int: The horizontal error. Positive if the line is to the right of
+             the center, negative if to the left. Returns 0 if the contour
+             is invalid.
     """
-    if isinstance(target_line, tuple):
-        target_line = target_line[0]  
+    # Calculate moments of the contour
+    moments = cv2.moments(target_line)
 
-    # Convert to numpy array e remove the extra dimensions
-    contour = np.squeeze(np.array(target_line))  
-
-    # avoid error if has few points
-    if contour.shape[0] < 2:
-        return None  
+    # Calculate the x-coordinate of the centroid
+    if moments["m00"] != 0:
+        center_x = int(moments["m10"] / moments["m00"])
+    else:
+        # Cannot calculate centroid, return no error
+        return None
     
-    # get the extremes points
-    x1, y1 = tuple(contour[np.argmin(contour[:, 1])])  # few value of Y (top)
-    x2, y2 = tuple(contour[np.argmax(contour[:, 1])])  # bigger value of Y (base)
-    
-    # calculate angle em rad
-    theta_rad = np.arctan2(y2 - y1, x2 - x1)
+    # The center of the image
+    image_center_x = img_width // 2
 
-    # convert to degree
-    theta_deg = np.degrees(theta_rad)
-    
-    # assure the degres in [0, 180]
-    theta_deg = theta_deg + 180 if theta_deg < 0 else theta_deg
+    # Calculate the positional error
+    error = center_x - image_center_x
 
-    # return the error in degree (for less use of memory)
-    return int(theta_deg - 90)
+    return error
+
+
 
 def identify_colour(img):
     """
@@ -222,7 +219,7 @@ def verify_90_curve(contour):
     # calculate the deviation
     deviation = abs(center_top_x - center_bottom_x)
 
-    print('thershold curva ({deviation})')
+#    print(f'thershold curva ({deviation})')
     # if deviation is soo big, it's a 90° curve
     if deviation > curve_threshold:
         return True
@@ -246,11 +243,6 @@ def analyse_contours(img, contours):
     # verify if has a line on the image
     if len(contours) > 0:
         contour_target = max(contours, key=cv2.contourArea)
-        # drawn the line target
-        #print(len(contours))
-
-        #cv2.drawContours(img, contours, -1, (0, 0, 255), 2)
-        #cv2.drawContours(img, contour_target, -1, (255, 0, 0), 5)
 
         # send img_widht as img.shape[1]
         has_90_curve = verify_90_curve(contour_target)
@@ -263,7 +255,7 @@ def analyse_contours(img, contours):
             curve_side = find_curve_side(contour_target, img.shape[1])
 
         # calculate the error
-        error = calculate_error(contour_target)
+        error = calculate_error(contour_target, img.shape[1])
 
         return error, curve_side
     return None, None 

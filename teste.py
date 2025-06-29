@@ -17,7 +17,7 @@ def teste_led(led):
 def teste_motors():
     try:
         print("Movendo para frente")
-        motors.run(210, 180)
+        motors.run(200, 200)
         sleep(6)
 
         print('parou')
@@ -25,7 +25,7 @@ def teste_motors():
         sleep(3)
         
         print("Movendo para trás")
-        motors.run_backward(220, 180)
+        motors.run_backward(100, 100)
         sleep(6)
 
         print("Parando")

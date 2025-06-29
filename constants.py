@@ -5,6 +5,7 @@ TRIG = 27
 ECHO = 22
 servo_arm = 14
 servo_shovel = 15
+BTN_PIN = 21
 
 """
 Constant values
@@ -16,9 +17,9 @@ BALL_FOUND = 1
 BALLS_SAVED = 0
 ERROR = -1
 TIME_OUT_SEARCH = 1
-DIFF_MOTOR = 10
+DIFF_MOTOR = 0
 
-FRAMES_TO_LOST = 5
+FRAMES_TO_LOST = 2
 
 # constants for led signals
 LINE_LOST = 2
@@ -39,9 +40,9 @@ DEAD_END = 2
 robot_position_x = 0
 
 #velocity
-base_right_velocity = 170
-base_left_velocity =  170 - DIFF_MOTOR
-curve_velocity = 200
+base_right_velocity = 130
+base_left_velocity =  130
+curve_velocity = 230
 
 # define the ramp slope and the upper on the motor to upper the ramp
 ramp_slope = 15 
@@ -50,14 +51,14 @@ velocity_ramp = 200
 """
 PID values
 """
-Kp = 10; Ki = 0; Kd = 0
+Kp = 8; Ki = 0; Kd = 0
 pid_state = {'I': 0}
 previous_error = 0 
 
 """
 Computer Vision constants
 """
-threshold_value =  56
+threshold_value = 61
 # size of the image
 desired_width = 320
 desired_height = 240

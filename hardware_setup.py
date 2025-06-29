@@ -2,16 +2,20 @@ import pigpio
 from gpiozero import LED
 from mpu6050 import mpu6050
 from motors import MotorController
-from constants import TRIG, ECHO
+from constants import TRIG, ECHO, BTN_PIN
 from logger import log 
 
 # initalize the compontens
 pi = pigpio.pi()
 accelerometer = mpu6050(0x68)
 motors = MotorController()
-
 green_led = LED(9)
 red_led = LED(10)
+
+# BUTTON
+pi.set_mode(BTN_PIN, pigpio.INPUT)
+pi.set_pull_up_down(BTN_PIN, pigpio.PUD_UP)
+pi.set_glitch_filter(BTN_PIN, 20000)
 
 # ultrassonic
 try:
