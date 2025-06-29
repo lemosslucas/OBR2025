@@ -5,7 +5,7 @@ TRIG = 27
 ECHO = 22
 servo_arm = 14
 servo_shovel = 15
-BTN_PIN = 21
+BTN_PIN = 17
 
 """
 Constant values
@@ -18,7 +18,7 @@ BALLS_SAVED = 0
 ERROR = -1
 TIME_OUT_SEARCH = 1
 DIFF_MOTOR = 0
-
+MIN_RECOVERY_AREA = 50
 FRAMES_TO_LOST = 2
 
 # constants for led signals

@@ -78,6 +78,27 @@ def teste_acelerometro():
     except KeyboardInterrupt:
         print('Fim da mediçaõ da inclinação')
 
+def teste_botao():
+    # Importa o pino do botão e o objeto 'pi' da configuração
+    from constants import BTN_PIN
+    from hardware_setup import pi
+    from time import sleep
+
+    print("\n--- Teste do Botão ---")
+    print("Pressione o botão para ver a mensagem.")
+    print("Pressione CTRL+C para voltar ao menu principal.")
+    
+    try:
+        while True:
+            if pi.read(BTN_PIN) == 0:
+                print(">>> Botão Pressionado! <<<")
+                sleep(0.5) 
+            
+            sleep(0.05)
+
+    except KeyboardInterrupt:
+        print("\n--- Fim do teste do botão ---")
+
 if __name__ == '__main__':
     opcao = 1
 
@@ -103,3 +124,7 @@ if __name__ == '__main__':
             teste_motors()
         elif opcao == 6:
             teste_rotacao()
+        elif opcao == 7:
+            teste_botao()
+        else:
+            print('digita certo')

@@ -243,6 +243,7 @@ def analyse_contours(img, contours):
     # verify if has a line on the image
     if len(contours) > 0:
         contour_target = max(contours, key=cv2.contourArea)
+        area = cv2.contourArea(contour_target)
 
         # send img_widht as img.shape[1]
         has_90_curve = verify_90_curve(contour_target)
@@ -257,8 +258,8 @@ def analyse_contours(img, contours):
         # calculate the error
         error = calculate_error(contour_target, img.shape[1])
 
-        return error, curve_side
-    return None, None 
+        return error, curve_side, area
+    return None, None, None
 
 def detect_line(img_processed, img_roi):
     """
@@ -294,13 +295,13 @@ def detect_line(img_processed, img_roi):
     color_detected = None
 
     # analyse the contours on the image
-    error, curve_side = analyse_contours(img_processed, contours)
+    error, curve_side, area = analyse_contours(img_processed, contours)
 
     # to avoid false-positive
-    if color_detected or curve_side is not False and len(contours) > 0: return 0, curve_side, color_detected
+    if color_detected or curve_side is not False and len(contours) > 0: return 0, curve_side, color_detected, area
     
     # return the erro and curve_side and color_detected
-    return error, curve_side, color_detected
+    return error, curve_side, color_detected, area
 
 #import matplotlib.pyplot as plt 
 

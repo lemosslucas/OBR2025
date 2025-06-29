@@ -6,7 +6,7 @@ from constants import (base_left_velocity,
                        base_right_velocity, ramp_slope, velocity_ramp,
                        servo_arm, servo_shovel, robot_position_x, curve_velocity,
                        BALL_FOUND, BALL_NOT_FOUND, BALLS_SAVED, MIN_DISTANCE_BALL,
-                       TRIG, ECHO, ERROR, FRAMES_TO_LOST,)
+                       TRIG, ECHO, ERROR, FRAMES_TO_LOST, MIN_RECOVERY_AREA)
 
 from hardware_setup import motors, pi, accelerometer
 from ball_detection import find_ball
@@ -109,8 +109,6 @@ def adjust_move(PID, is_ramp=False):
         # update the velocity values
         right_velocity = max(0, min(base_right_velocity - PID, 255))
         left_velocity = max(0, min(base_left_velocity + PID, 255))
-
-    print(left_velocity, right_velocity)
  
     # update the vel of the car
     motors.run(right_velocity, left_velocity)
@@ -143,10 +141,12 @@ def try_comeback_line(move_function, get_current_img, duration=1.5):
         if t >= FRAMES_TO_LOST:
             return True
         print(f"tentativa {t}")
+
         # to avoid a color detec_error
-        erro, _, _ = detect_line(get_current_img(), None)
+        erro, _, _, area = detect_line(get_current_img(), None)
+        
         # ensure the robot has back on the line
-        if erro is not None:
+        if erro is not None and area > MIN_RECOVERY_AREA:
             log('Voltamos')
             motors.stop_motor() 
             t+=1
@@ -193,7 +193,7 @@ def verify_lost_line(get_current_img):
     line_lost_count = 0
 
     while (time.time() - start_time) < timeout:
-        erro, _, _ =  detect_line(get_current_img(), None)
+        erro, _, _, _ =  detect_line(get_current_img(), None)
 
         # add a counter to avoid false-positive
         if erro is None:
@@ -232,8 +232,9 @@ def turn_90(turn_function, gyro_bias_z, get_current_img):
         get_current_img (function): A function that returns the current camera image for line detection.
     """
     if verify_lost_line(get_current_img):
-        time.sleep(0.8)
-        
+        time.sleep(0.4)
+
+        print('parei pra virar')
         # stop the motors: 2 move
         motors.stop_motor()
         time.sleep(0.5)
@@ -553,4 +554,4 @@ def search_balls_on_rescue_area(img, start_search):
     return False, start_search 
 
 if __name__ == "__main__":
-    adjust_move(0)
+    pass

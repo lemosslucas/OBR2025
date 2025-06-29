@@ -9,8 +9,9 @@ from constants import *
 import constants
 import time
 from hardware_setup import red_led, green_led, motors, disconnect_all_hardware, pi
+import pigpio
 
-robot_running = True
+robot_running = False
 img = None
 
 # init the cam
@@ -53,7 +54,7 @@ def update_camera_feed():
             # Uma pequena pausa antes de tentar novamente
             time.sleep(0.5)
 
-def toggle_robot_state():
+def toggle_robot_state(gpio, level, tick):
     global robot_running
     # Inverte o estado (True -> False, False -> True)
     robot_running = not robot_running 
@@ -67,7 +68,7 @@ def toggle_robot_state():
         motors.stop_motor()
         red_led.on()
 
-pi.callback(BTN_PIN, pi.FALLING_EDGE, toggle_robot_state)
+pi.callback(BTN_PIN, pigpio.FALLING_EDGE, toggle_robot_state)
 gyro_bias_z = calibrate_gyro(300)
 
 def run_robot_control():
@@ -104,7 +105,7 @@ def run_robot_control():
             avoid_obstacle(cam, gyro_bias_z)
         
         # calculate the error
-        erro, is_curve, has_colour = detect_line(img, img_roi)
+        erro, is_curve, has_colour, _ = detect_line(img, img_roi)
         log(f'erro: {erro} | is_curve {is_curve} | has_colour {has_colour}')
 
         # if not has line it try to come back of line
@@ -196,7 +197,8 @@ def run_robot_control():
     red_led.on()
 
 if __name__ == '__main__':
-    gyro_bias_z = calibrate_gyro(200)
+    print('esperando  o sinal')
+
     try:
         while True:
             # if true, run the contol.
