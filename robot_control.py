@@ -423,7 +423,7 @@ def read_accelerometer():
         data = accelerometer.get_accel_data() 
 
         # calculate the inclination of robot using x and z labels
-        inclination_angle = np.arctan2(data['x'], data['z']) * (180 / np.pi)
+        inclination_angle = np.arctan2(data['y'], data['z']) * (180 / np.pi)
 
         # return the inclination of robot
         return inclination_angle

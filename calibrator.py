@@ -4,9 +4,12 @@ import cv2
 from flask import Flask, Response, render_template, request, jsonify
 from threading import Thread
 from picamera2 import Picamera2
+import numpy as np
 
 # Importações dos módulos do seu projeto
 from constants import update_constants, threshold_value
+from constants import GREEN, RED, GRAY, LEFT, RIGHT, DEAD_END, MIN_AREA_GREEN
+
 from line_detection import process_image
 from logger import log
 
@@ -33,17 +36,95 @@ def update_camera_feed():
             log(f"Falha ao capturar frame para o feed: {e}")
             time.sleep(0.5)
 
-# --- Geradores de Frame para Streaming ---
+def identify_colour(img):
+    """
+    Identifica a cor dominante e retorna a cor, informações de lado (para verde)
+    e os contornos da cor detectada.
+    """
+    if img is None: 
+        # Retorna uma tupla de 3 elementos para consistência
+        return None, None, None
+    
+    hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    
+    # IMPORTANTE: Coloque aqui os ranges de HSV que você calibrou!
+    color_ranges = {
+        GREEN: [(np.array([44-5, 94-5, 140-5]), np.array([47 + 5, 122 +5, 188 + 5]))],
+        RED: [
+            (np.array([122-5, 203-5, 151-5]), np.array([126+5, 223+5, 227+5])),
+            #(np.array([160, 100, 100]), np.array([180, 255, 255]))
+        ],
+        #GRAY: [(np.array([0, 0, 50]), np.array([130, 60, 220]))]
+    }
+    
+    kernel = np.ones((3, 3), np.uint8)
+    detected_areas = {}
+    colors_contours = {}
+
+    for color, ranges in color_ranges.items():
+        mask = np.bitwise_or.reduce([cv2.inRange(hsv_img, lower, upper) for lower, upper in ranges])
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        detected_areas[color] = sum(cv2.contourArea(c) for c in contours)
+        colors_contours[color] = contours
+
+    if max(detected_areas.values()) > 0:
+        dominant_color = max(detected_areas, key=detected_areas.get)
+        dominant_contours = colors_contours[dominant_color]
+
+        if dominant_color == GREEN:
+            squares = [c for c in dominant_contours if cv2.contourArea(c) > MIN_AREA_GREEN]
+            num_squares = len(squares)
+
+            if num_squares >= 2:
+                return dominant_color, DEAD_END, squares
+            
+            elif num_squares == 1:
+                mid = img.shape[1] // 2
+                moments = cv2.moments(squares[0])
+                if moments['m00'] != 0:
+                    cX = int(moments["m10"] / moments["m00"])
+                    side = LEFT if cX < mid else RIGHT  
+                    return dominant_color, side, squares
+                return dominant_color, None, squares 
+        
+        # Para outras cores, retorna a cor e seus contornos
+        return dominant_color, None, dominant_contours
+        
+    return None, None, None
 
 def generate_raw_frames():
     """Gera o feed de vídeo bruto (colorido) da câmera."""
+    draw_colors = {
+        GREEN: (0, 255, 0),   # Verde
+        RED: (0, 0, 255),     # Vermelho
+        GRAY: (128, 128, 128) # Cinza
+    }
+
     while True:
         if img is None:
             time.sleep(0.1)
             continue
         
+        # Crie uma cópia da imagem para desenhar sobre ela, preservando a original
+        display_img = img.copy()
+
+        # Chame a função para identificar cores
+        detected_color, side_info, contours = identify_colour(display_img)
+
+        # Se algum contorno de cor foi detectado...
+        if contours:
+            # Pegue a cor para desenhar o retângulo
+            rect_color = draw_colors.get(detected_color, (255, 255, 255)) # Branco como padrão
+
+            # Desenhe um retângulo para cada contorno encontrado
+            for cnt in contours:
+                x, y, w, h = cv2.boundingRect(cnt)
+                cv2.rectangle(display_img, (x, y), (x + w, y + h), rect_color, 2)
+
         # Codifica o frame como JPEG
-        ret, buffer = cv2.imencode('.jpg', img)
+        ret, buffer = cv2.imencode('.jpg', display_img)
         if not ret:
             continue
         frame = buffer.tobytes()

@@ -1,5 +1,4 @@
 import cv2 
-from picamera2 import Picamera2
 from line_detection import detect_line, process_image
 from robot_control import (measure_distance, avoid_obstacle, calibrate_gyro,
                            adjust_move, calculate_PID, led_feedback, turn_90, try_comeback_line,
@@ -9,6 +8,9 @@ from constants import *
 import constants
 import time
 from hardware_setup import red_led, green_led, motors, disconnect_all_hardware, pi
+from threading import Thread
+
+from picamera2 import Picamera2
 import pigpio
 
 robot_running = False
@@ -142,7 +144,7 @@ def run_robot_control():
             # verify if is going to rescue area
             if colour == GRAY:
                 log('Rescue area detected')
-                #rescue_area(cam)
+                led_feedback(red_led, GIVEWAY_RESCUE)
 
             # verify if has a 90°curve
             elif colour == GREEN:
@@ -181,7 +183,7 @@ def run_robot_control():
         else:
             PID = calculate_PID(erro, constants.previous_error, constants.Kp, constants.Kd, constants.Ki, pid_state)
             angulo = read_accelerometer()
-            print(angulo)
+            #print(angulo)
 
             # verify if the robot is on the ramp and adjust the velociry
             if angulo >= ramp_slope:
@@ -198,6 +200,10 @@ def run_robot_control():
 
 if __name__ == '__main__':
     print('esperando  o sinal')
+
+    log("Iniciando a thread do feed da câmera...")
+    camera_thread = Thread(target=update_camera_feed, daemon=True)
+    camera_thread.start()
 
     try:
         while True:

@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import os 
 
-from constants import GRAY, GREEN, RED, LEFT, RIGHT, curve_threshold, MIN_AREA_GREEN, DEAD_END
+from constants import GRAY, GREEN, RED, LEFT, RIGHT, curve_threshold, MIN_AREA_GREEN, DEAD_END, COLOR_OFFSET
 import constants
 
 def calculate_error(target_line, img_width):
@@ -38,8 +38,6 @@ def calculate_error(target_line, img_width):
 
     return error
 
-
-
 def identify_colour(img):
     """
     Identifies the dominant color in an image based on predefined HSV ranges.
@@ -64,9 +62,10 @@ def identify_colour(img):
     
     # definy colour ranges
     color_ranges = {
-#        RED: [(np.array([0, 100, 100]), np.array([10, 255, 255])),
-#                (np.array([160, 100, 100]), np.array([180, 255, 255]))],  # Red (Hue 0-10)
-#        GREEN: [(np.array([40, 40, 40]), np.array([90, 255, 255]))],  # Green (Hue 40-90)
+        GREEN: [(np.array([44 - COLOR_OFFSET, 94 - COLOR_OFFSET, 140 - COLOR_OFFSET]), 
+                 np.array([47 + COLOR_OFFSET, 122 + COLOR_OFFSET, 188 + COLOR_OFFSET]))],
+        RED: [(np.array([122 - COLOR_OFFSET, 203 - COLOR_OFFSET, 151 - COLOR_OFFSET]), 
+               np.array([126 + COLOR_OFFSET, 223 + COLOR_OFFSET, 227 + COLOR_OFFSET]))]
 #        GRAY: [(np.array([0, 0, 50]), np.array([130, 60, 220]))]  # Gray
     }
     
@@ -86,10 +85,6 @@ def identify_colour(img):
         detected_areas[color] = sum(cv2.contourArea(c) for c in contours)
         colors_contours[color] = contours
 
-        if contours:
-            # drawn the contours in black colour
-            cv2.drawContours(img, contours, -1, (0,0,0), 2)
-
     if max(detected_areas.values()) > 0:
         dominant_color = max(detected_areas, key=detected_areas.get) 
         
@@ -98,9 +93,6 @@ def identify_colour(img):
             
             squares = [c for c in green_contours if cv2.contourArea(c) > MIN_AREA_GREEN]
             num_squares = len(squares)
-
-            # debug so
-            #cv2.drawContours(img, squares, -1, (0, 255, 0), 2)
 
             if num_squares >= 2:
                 print('beco sem saida')
@@ -219,7 +211,7 @@ def verify_90_curve(contour):
     # calculate the deviation
     deviation = abs(center_top_x - center_bottom_x)
 
-#    print(f'thershold curva ({deviation})')
+#   print(f'thershold curva ({deviation})')
     # if deviation is soo big, it's a 90° curve
     if deviation > curve_threshold:
         return True
@@ -257,7 +249,7 @@ def analyse_contours(img, contours):
 
         # calculate the error
         error = calculate_error(contour_target, img.shape[1])
-
+        
         return error, curve_side, area
     return None, None, None
 
@@ -291,8 +283,7 @@ def detect_line(img_processed, img_roi):
     contours, _ = cv2.findContours(img_processed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # verify if has a symbol on the img
-#   color_detected = identify_colour(img_roi)
-    color_detected = None
+    color_detected = identify_colour(img_roi)
 
     # analyse the contours on the image
     error, curve_side, area = analyse_contours(img_processed, contours)
@@ -303,16 +294,16 @@ def detect_line(img_processed, img_roi):
     # return the erro and curve_side and color_detected
     return error, curve_side, color_detected, area
 
-#import matplotlib.pyplot as plt 
-
-def download_image(img, erro, path, image_name, color_detected, curve_side=False):
-    #plt.title(f'Erro = {erro}°, Curve = {curve_side}, Color: {color_detected}')
-    #plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-    #plt.show()
-    #plt.savefig(f"{path}/analised/{image_name}-analised.jpg")
-    pass 
-
 if __name__ == '__main__':
+    #import matplotlib.pyplot as plt 
+
+    def download_image(img, erro, path, image_name, color_detected, curve_side=False):
+        #plt.title(f'Erro = {erro}°, Curve = {curve_side}, Color: {color_detected}')
+        #plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        #plt.show()
+        #plt.savefig(f"{path}/analised/{image_name}-analised.jpg")
+        pass 
+
     path = 'datas/lines/'
     images = [f for f in os.listdir(path) if f.endswith('.jpg')]
     

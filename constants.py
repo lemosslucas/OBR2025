@@ -20,11 +20,13 @@ TIME_OUT_SEARCH = 1
 DIFF_MOTOR = 0
 MIN_RECOVERY_AREA = 50
 FRAMES_TO_LOST = 2
+COLOR_OFFSET = 10
 
 # constants for led signals
 LINE_LOST = 2
 START_ROBOT = 1
 LINE_FOUND =2
+GIVEWAY_RESCUE = 3
 # define the color values references
 BLACK = 0
 GRAY = 1
@@ -63,7 +65,7 @@ threshold_value = 61
 desired_width = 320
 desired_height = 240
 
-MIN_AREA_GREEN = 100
+MIN_AREA_GREEN = 50
 curve_threshold = 50
 
 def update_constants(kp=None, ki=None, kd=None, threshold=None):
