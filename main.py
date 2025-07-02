@@ -193,7 +193,7 @@ def run_robot_control():
                 adjust_move(PID)
             
             if erro is not None:
-                constants.previous_error = erro
+                constants.previous_error = erro[0]
 
     # turn off the leds
     red_led.on()

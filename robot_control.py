@@ -69,7 +69,10 @@ def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
     Returns:
         int: The computed PID output.
     """
-    P = error
+    # posicional error
+    P = error[0]
+    # angular error
+    D = error[1]
     pid_state['I'] += P
 
     # anti wind up
@@ -80,7 +83,7 @@ def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
     # Clamp integral term between -255 and 255
     pid_state['I'] = max(-255, min(255, pid_state['I']))
 
-    D = error - previous_error
+    #D = error - previous_error
 
     PID = (Kp * P) + (Ki * pid_state['I']) + (Kd * D)
 

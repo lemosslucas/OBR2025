@@ -53,7 +53,7 @@ velocity_ramp = 200
 """
 PID values
 """
-Kp = 8; Ki = 0; Kd = 0
+Kp = 8; Ki = 0; Kd = 2
 pid_state = {'I': 0}
 previous_error = 0 
 

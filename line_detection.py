@@ -247,9 +247,21 @@ def analyse_contours(img, contours):
         if has_90_curve:
             curve_side = find_curve_side(contour_target, img.shape[1])
 
-        # calculate the error
-        error = calculate_error(contour_target, img.shape[1])
-        
+        # calculate the error_pos
+        error_pos = calculate_error(contour_target, img.shape[1])
+
+        # calculate angle error 
+        if len(contour_target) > 5: 
+            # return (vx, vy) is vector of line direction
+            [vx, vy, _, _] = cv2.fitLine(contour_target, cv2.DIST_L2, 0, 0.01, 0.01)
+            
+            # calculate the angle in rad after convert in degres
+            angulo_rad = np.arctan2(vx, vy)
+            error_deg = np.degrees(angulo_rad)
+        else:
+            error_deg = 0
+
+        error = (error_pos, error_deg)
         return error, curve_side, area
     return None, None, None
 
