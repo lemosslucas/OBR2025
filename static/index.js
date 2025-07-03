@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { sliderId: 'slider-kp', valueId: 'value-kp' },
         { sliderId: 'slider-ki', valueId: 'value-ki' },
         { sliderId: 'slider-kd', valueId: 'value-kd' },
+        { sliderId: 'slider-ka', valueId: 'value-ka' },
     ];
 
     sliders.forEach(({ sliderId, valueId }) => {
@@ -56,12 +57,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const kp = document.getElementById('slider-kp').value;
         const ki = document.getElementById('slider-ki').value;
         const kd = document.getElementById('slider-kd').value;
+        const ka = document.getElementById('slider-ka').value;
         const threshold = document.getElementById('slider-threshold').value;
 
         fetch('/update_params', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ kp, ki, kd, threshold })
+            body: JSON.stringify({ kp, ki, kd, ka, threshold })
         })
         .then(res => res.json())
         .then(data => console.log('Parâmetros atualizados:', data))

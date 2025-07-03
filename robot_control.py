@@ -3,10 +3,11 @@ import cv2
 import time
 
 from constants import (base_left_velocity,
-                       base_right_velocity, ramp_slope, velocity_ramp,
+                       base_right_velocity,velocity_ramp,
                        servo_arm, servo_shovel, robot_position_x, curve_velocity,
                        BALL_FOUND, BALL_NOT_FOUND, BALLS_SAVED, MIN_DISTANCE_BALL,
                        TRIG, ECHO, ERROR, FRAMES_TO_LOST, MIN_RECOVERY_AREA)
+import constants
 
 from hardware_setup import motors, pi, accelerometer
 from ball_detection import find_ball
@@ -72,7 +73,7 @@ def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
     # posicional error
     P = error[0]
     # angular error
-    D = error[1]
+    #D = error[1]
     pid_state['I'] += P
 
     # anti wind up
@@ -83,14 +84,15 @@ def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
     # Clamp integral term between -255 and 255
     pid_state['I'] = max(-255, min(255, pid_state['I']))
 
-    #D = error - previous_error
+    D = error[0] - previous_error
 
-    PID = (Kp * P) + (Ki * pid_state['I']) + (Kd * D)
+    PID = (Kp * P) + (Ki * pid_state['I']) + (Kd * D) 
+    PID = PID + constants.Ka * error[1]
 
     log(f'Erro {error} | Pid {PID} | Kp: {Kp} | Kd: {Kd} | Ki: {Ki}')
     return PID
 
-def adjust_move(PID, is_ramp=False):
+def adjust_move(PID, base_right_velocity, base_left_velocity):
     """
     Adjusts the velocity of the robot's motors based on the PID output.
 
@@ -104,14 +106,8 @@ def adjust_move(PID, is_ramp=False):
                      A positive PID value decreases the right velocity and increases the left velocity.
     """
 
-    if is_ramp:
-        # update the velocity values
-        right_velocity = max(0, min(velocity_ramp - PID, 255))
-        left_velocity = max(0, min(velocity_ramp + PID, 255))
-    else:
-        # update the velocity values
-        right_velocity = max(0, min(base_right_velocity - PID, 255))
-        left_velocity = max(0, min(base_left_velocity + PID, 255))
+    right_velocity = max(0, min(base_right_velocity - PID, 255))
+    left_velocity = max(0, min(base_left_velocity + PID, 255))
  
     # update the vel of the car
     motors.run(right_velocity, left_velocity)
@@ -187,12 +183,11 @@ def calibrate_gyro(samples=400):
 
     return bias_gz
 
-def verify_lost_line(get_current_img):
+def verify_lost_line(get_current_img, timeout=5.0):
     """
     """
     # timeout to avoid infite loop
     start_time = time.time()
-    timeout = 5.0
     line_lost_count = 0
 
     while (time.time() - start_time) < timeout:
@@ -234,7 +229,7 @@ def turn_90(turn_function, gyro_bias_z, get_current_img):
         gyro_bias_z (float): The gyroscope Z-axis bias used to calculate angular displacement.
         get_current_img (function): A function that returns the current camera image for line detection.
     """
-    if verify_lost_line(get_current_img):
+    if verify_lost_line(get_current_img, timeout=1.0):
         time.sleep(0.4)
 
         print('parei pra virar')

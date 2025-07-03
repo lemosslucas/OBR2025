@@ -79,6 +79,8 @@ def run_robot_control():
 
     # loop to read the cam
     while robot_running:
+        red_led.off()
+        
         # extract the cam info
         if img is None:
             log("Aguardando primeiro frame da camera")
@@ -107,18 +109,18 @@ def run_robot_control():
             avoid_obstacle(cam, gyro_bias_z)
         
         # calculate the error
-        erro, is_curve, has_colour, _ = detect_line(img, img_roi)
-        log(f'erro: {erro} | is_curve {is_curve} | has_colour {has_colour}')
+        error, is_curve, has_colour, _ = detect_line(img, img_roi)
+        log(f'erro: {error} | is_curve {is_curve} | has_colour {has_colour}')
 
         # if not has line it try to come back of line
         
-        if erro is None:
+        if error is None:
             log("Perdeu a linha, deu merda")
             motors.stop_motor()
             led_feedback(red_led, LINE_LOST)
 
             # try forward
-            if try_comeback_line(motors.run_backward, get_current_img, duration=0.5):
+            if try_comeback_line(motors.run_backward, get_current_img, duration=2):
                 led_feedback(green_led, LINE_FOUND)
                 continue 
                 
@@ -181,19 +183,22 @@ def run_robot_control():
                 turn_90(motors.turn_right, gyro_bias_z, get_current_img)
                 
         else:
-            PID = calculate_PID(erro, constants.previous_error, constants.Kp, constants.Kd, constants.Ki, pid_state)
+            PID = calculate_PID(error, constants.previous_error, constants.Kp, constants.Kd, constants.Ki, pid_state)
             angulo = read_accelerometer()
-            #print(angulo)
 
             # verify if the robot is on the ramp and adjust the velociry
             if angulo >= ramp_slope:
-                adjust_move(PID, is_ramp=True)
+                print(angulo)
+                adjust_move(PID, velocity_ramp, velocity_ramp)
+            elif angulo <= -ramp_slope:
+                print(angulo)
+                adjust_move(PID, velocity_ramp_down, velocity_ramp_down)
             else:
                 # adjust move the car
-                adjust_move(PID)
+                adjust_move(PID, base_right_velocity, base_left_velocity)
             
-            if erro is not None:
-                constants.previous_error = erro[0]
+            if error is not None:
+                constants.previous_error = error[0]
 
     # turn off the leds
     red_led.on()

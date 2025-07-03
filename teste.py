@@ -73,8 +73,9 @@ def teste_ultrassonico():
 def teste_acelerometro():
     from robot_control import read_accelerometer
     try:
-        angulo = read_accelerometer()
-        print(f"Inclinação: {angulo:.2f}°")
+        while True:
+            angulo = read_accelerometer()
+            print(f"Inclinação: {angulo:.2f}°")
     except KeyboardInterrupt:
         print('Fim da mediçaõ da inclinação')
 

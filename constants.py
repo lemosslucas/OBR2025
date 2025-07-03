@@ -44,16 +44,17 @@ robot_position_x = 0
 #velocity
 base_right_velocity = 130
 base_left_velocity =  130
-curve_velocity = 230
+curve_velocity = 220
 
 # define the ramp slope and the upper on the motor to upper the ramp
 ramp_slope = 15 
-velocity_ramp = 200
+velocity_ramp = 220
+velocity_ramp_down = 100
 
 """
 PID values
 """
-Kp = 8; Ki = 0; Kd = 2
+Kp = 4; Ki = 0.05; Kd = 0; Ka = 0.05
 pid_state = {'I': 0}
 previous_error = 0 
 
@@ -68,7 +69,7 @@ desired_height = 240
 MIN_AREA_GREEN = 50
 curve_threshold = 50
 
-def update_constants(kp=None, ki=None, kd=None, threshold=None):
+def update_constants(kp=None, ki=None, kd=None, ka=None, threshold=None):
     global Kp, Ki, Kd, threshold_value
     if kp is not None:
         Kp = kp
@@ -76,5 +77,7 @@ def update_constants(kp=None, ki=None, kd=None, threshold=None):
         Ki = ki
     if kd is not None:
         Kd = kd
+    if ka is not None:
+        Ka = ka
     if threshold is not None:
         threshold_value = threshold

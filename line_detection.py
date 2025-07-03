@@ -34,9 +34,22 @@ def calculate_error(target_line, img_width):
     image_center_x = img_width // 2
 
     # Calculate the positional error
-    error = center_x - image_center_x
+    error_pos = center_x - image_center_x
 
-    return error
+    # calculate angle error 
+    if len(target_line) > 5: 
+        # return (vx, vy) is vector of line direction
+        [vx, vy, _, _] = cv2.fitLine(target_line, cv2.DIST_L2, 0, 0.01, 0.01)
+        
+        # calculate the angle in rad after convert in degres
+        angulo_rad = np.arctan2(vx, vy)
+        error_deg = np.degrees(angulo_rad)[0]
+    else:
+        error_deg = 0
+
+    error = (error_pos, error_deg)
+    
+    return  error
 
 def identify_colour(img):
     """
@@ -230,7 +243,7 @@ def analyse_contours(img, contours):
     Returns:
         tuple:
             - erro (int or None): Angular error in degrees relative to vertical.
-            - curve_side (int or None): LEFT or RIGHT if a curve is detected, otherwise False.
+            - curve_side (int): LEFT or RIGHT if a curve is detected, otherwise False.
     """
     # verify if has a line on the image
     if len(contours) > 0:
@@ -248,22 +261,10 @@ def analyse_contours(img, contours):
             curve_side = find_curve_side(contour_target, img.shape[1])
 
         # calculate the error_pos
-        error_pos = calculate_error(contour_target, img.shape[1])
+        error = calculate_error(contour_target, img.shape[1])
 
-        # calculate angle error 
-        if len(contour_target) > 5: 
-            # return (vx, vy) is vector of line direction
-            [vx, vy, _, _] = cv2.fitLine(contour_target, cv2.DIST_L2, 0, 0.01, 0.01)
-            
-            # calculate the angle in rad after convert in degres
-            angulo_rad = np.arctan2(vx, vy)
-            error_deg = np.degrees(angulo_rad)
-        else:
-            error_deg = 0
-
-        error = (error_pos, error_deg)
         return error, curve_side, area
-    return None, None, None
+    return None, False, None
 
 def detect_line(img_processed, img_roi):
     """
@@ -301,7 +302,8 @@ def detect_line(img_processed, img_roi):
     error, curve_side, area = analyse_contours(img_processed, contours)
 
     # to avoid false-positive
-    if color_detected or curve_side is not False and len(contours) > 0: return 0, curve_side, color_detected, area
+ #   if (color_detected is not None) or (curve_side is not False) and len(contours) > 0: 
+ #       return (0,0),    curve_side, color_detected, area
     
     # return the erro and curve_side and color_detected
     return error, curve_side, color_detected, area

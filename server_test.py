@@ -11,7 +11,7 @@ import json
 import subprocess
 
 from main import run_robot_control, robot_running
-from constants import update_constants, Kp, Ki, Kd, threshold_value
+from constants import update_constants, Kp, Ki, Kd, threshold_value, Ka
 
 from logger import log, log_buffer, log_lock
 import main 
@@ -111,6 +111,7 @@ def index():
                            Kp=Kp, 
                            Ki=Ki, 
                            Kd=Kd, 
+                           Ka=Ka,
                            threshold_value=threshold_value) 
 
 @app.route('/update_params', methods=['POST'])
@@ -121,6 +122,7 @@ def update_params():
         kp=float(data.get('kp', Kp)),
         ki=float(data.get('ki', Ki)),
         kd=float(data.get('kd', Kd)),
+        ka=float(data.get('ka', Ka)),
         threshold=int(data.get('threshold', threshold_value))
     )
 
@@ -129,6 +131,7 @@ def update_params():
         "Kp": Kp,
         "Ki": Ki,
         "Kd": Kd,
+        "Ka": Ka,
         "threshold": threshold_value
     })
 
