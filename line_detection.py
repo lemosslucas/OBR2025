@@ -74,6 +74,8 @@ def identify_colour(img):
     hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     
     # definy colour ranges
+    # primeira linha valores minimos ordem: (H, S, V)
+    # segunda linha valores maximos, ordem: (H, S, V)
     color_ranges = {
         GREEN: [(np.array([44 - COLOR_OFFSET, 94 - COLOR_OFFSET, 140 - COLOR_OFFSET]), 
                  np.array([47 + COLOR_OFFSET, 122 + COLOR_OFFSET, 188 + COLOR_OFFSET]))],
