@@ -2,7 +2,7 @@ import cv2
 from line_detection import detect_line, process_image
 from robot_control import (measure_distance, avoid_obstacle, calibrate_gyro,
                            adjust_move, calculate_PID, led_feedback, turn_90, try_comeback_line,
-                           turn_until_angle, read_accelerometer)
+                           read_accelerometer, do_dead_end)
 from logger import log
 from constants import *
 import constants
@@ -158,10 +158,7 @@ def run_robot_control():
                     log('90 degree turn on right')
                     turn_90(motors.turn_right, gyro_bias_z, get_current_img)
                 elif side_curve == DEAD_END:
-                    log('beco sem saida')
-                    motors.turn_left(curve_velocity, curve_velocity)
-                    turn_until_angle(180, gyro_bias_z)
-                
+                    do_dead_end(gyro_bias_z)
 
             elif colour == RED:
                 log('finish line')

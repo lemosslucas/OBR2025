@@ -54,14 +54,14 @@ velocity_ramp_down = 100
 """
 PID values
 """
-Kp = 4; Ki = 0.05; Kd = 0; Ka = 0.05
+Kp = 4; Ki = 0; Kd = 0; Ka = 0
 pid_state = {'I': 0}
 previous_error = 0 
 
 """
 Computer Vision constants
 """
-threshold_value = 61
+threshold_value = 45
 # size of the image
 desired_width = 320
 desired_height = 240

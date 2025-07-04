@@ -73,7 +73,6 @@ def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
     # posicional error
     P = error[0]
     # angular error
-    #D = error[1]
     pid_state['I'] += P
 
     # anti wind up
@@ -244,6 +243,31 @@ def turn_90(turn_function, gyro_bias_z, get_current_img):
         log('curva de 90 feita')
     else:
         log('era uma intersecao')
+
+def do_dead_end(gyro_bias_z):
+    """
+    """
+    # run 0.2 sec
+    time.sleep(0.2)
+    log('beco sem saida')
+  
+    # turn 90 degre on right
+    motors.turn_right(curve_velocity, curve_velocity)
+    turn_until_angle(90, gyro_bias_z)
+  
+    # run backward until find the line again
+    motors.run_backward(base_right_velocity, base_left_velocity)
+    time.sleep(2)
+    
+    # stop to syc the motors
+    motors.stop_motor()
+    time.sleep(0.2)
+
+    # turn on right again to finsish 180 curve
+    motors.turn_right(curve_velocity, curve_velocity)
+    turn_until_angle(90, gyro_bias_z)
+    motors.stop_motor()
+    time.sleep(0.2)
 
 def turn_until_angle(target_angle=90, gyro_bias_z=0):
     """
