@@ -49,7 +49,7 @@ curve_velocity = 220
 # define the ramp slope and the upper on the motor to upper the ramp
 ramp_slope = 15 
 velocity_ramp = 220
-velocity_ramp_down = 100
+velocity_ramp_down = 80
 
 """
 PID values
@@ -61,7 +61,7 @@ previous_error = 0
 """
 Computer Vision constants
 """
-threshold_value = 45
+threshold_value = 52
 # size of the image
 desired_width = 320
 desired_height = 240

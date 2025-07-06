@@ -113,8 +113,12 @@ def run_robot_control():
         log(f'erro: {error} | is_curve {is_curve} | has_colour {has_colour}')
 
         # if not has line it try to come back of line
+        angulo = read_accelerometer()
         
-        if error is None:
+        if error is None and (angulo <= ramp_slope or angulo >= -ramp_slope):
+            adjust_move(PID, velocity_ramp, velocity_ramp)
+            time.sleep(0.2)
+
             log("Perdeu a linha, deu merda")
             motors.stop_motor()
             led_feedback(red_led, LINE_LOST)
@@ -181,7 +185,6 @@ def run_robot_control():
                 
         else:
             PID = calculate_PID(error, constants.previous_error, constants.Kp, constants.Kd, constants.Ki, pid_state)
-            angulo = read_accelerometer()
 
             # verify if the robot is on the ramp and adjust the velociry
             if angulo >= ramp_slope:
