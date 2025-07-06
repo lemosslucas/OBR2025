@@ -73,11 +73,11 @@ def toggle_robot_state(gpio, level, tick):
 pi.callback(BTN_PIN, pigpio.FALLING_EDGE, toggle_robot_state)
 gyro_bias_z = calibrate_gyro(300)
 
-error_none = 0
 
 def run_robot_control():
     # define global variables
     global robot_running, img
+    error_none = 0
 
     # loop to read the cam
     while robot_running:
@@ -192,10 +192,10 @@ def run_robot_control():
 
             # verify if the robot is on the ramp and adjust the velociry
             if angulo >= ramp_slope:
-                print(angulo)
+                print('subindo: ', angulo)
                 adjust_move(PID, velocity_ramp, velocity_ramp)
             elif angulo <= -ramp_slope:
-                print(angulo)
+                print('descendo: ', angulo)
                 adjust_move(PID, velocity_ramp_down, velocity_ramp_down)
             else:
                 # adjust move the car

@@ -215,7 +215,7 @@ def update_hsv_ranges():
 if __name__ == '__main__':
     try:
         log("Calibrador: Inicializando a camera...")
- #       cam = Picamera2(); cam.configure(cam.create_preview_configuration(main={"size": (320, 240)})); cam.start()
+        cam = Picamera2(); cam.configure(cam.create_preview_configuration(main={"size": (320, 240)})); cam.start()
         time.sleep(1.0); log("Calibrador: Câmera pronta.")
         camera_thread = Thread(target=update_camera_feed, daemon=True); camera_thread.start()
         log("Servidor de calibração iniciado. Acesse http://<ip_do_raspberry>:5000")
