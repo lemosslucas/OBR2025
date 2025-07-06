@@ -1,0 +1,3 @@
+[2025-07-06 11:43:22] Calibrador: Inicializando a camera...
+[2025-07-06 11:43:23] Calibrador: Câmera pronta.
+[2025-07-06 11:43:23] Servidor de calibração iniciado. Acesse http://<ip_do_raspberry>:5000

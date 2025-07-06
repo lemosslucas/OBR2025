@@ -3,7 +3,7 @@ import time
 import cv2
 from flask import Flask, Response, render_template, request, jsonify
 from threading import Thread
-from picamera2 import Picamera2
+#from picamera2 import Picamera2
 import numpy as np
 
 # Importações dos módulos do seu projeto
@@ -154,7 +154,6 @@ def index():
                 'name': key_to_name_map[key]['name'],   # ex: "GREEN"
                 'ranges': ranges_data
             })
-
     # Passamos a lista (agora corretamente preenchida) para o template
     return render_template('calibrator.html',
                            current_threshold=threshold_value,
@@ -188,6 +187,7 @@ def get_hsv_from_roi():
 @app.route('/update_threshold', methods=['POST'])
 def update_threshold_value():
     new_threshold = int(request.get_json()['threshold'])
+    #print(new_threshold)
     update_constants(threshold=new_threshold)
     return jsonify({"status": "success", "new_threshold": new_threshold})
 
@@ -203,7 +203,11 @@ def update_hsv_ranges():
     if color_key is not None and color_key in dynamic_color_ranges:
         dynamic_color_ranges[color_key]['lower'] = [int(data['h_min']), int(data['s_min']), int(data['v_min'])]
         dynamic_color_ranges[color_key]['upper'] = [int(data['h_max']), int(data['s_max']), int(data['v_max'])]
+ #       print(dynamic_color_ranges[color_key]['lower'])
+ #       print(dynamic_color_ranges[color_key]['upper'])
+
         return jsonify({"status": "success"})
+    
 
     return jsonify({"status": "error", "message": "Invalid color name"}), 400
 
@@ -211,7 +215,7 @@ def update_hsv_ranges():
 if __name__ == '__main__':
     try:
         log("Calibrador: Inicializando a camera...")
-        cam = Picamera2(); cam.configure(cam.create_preview_configuration(main={"size": (320, 240)})); cam.start()
+ #       cam = Picamera2(); cam.configure(cam.create_preview_configuration(main={"size": (320, 240)})); cam.start()
         time.sleep(1.0); log("Calibrador: Câmera pronta.")
         camera_thread = Thread(target=update_camera_feed, daemon=True); camera_thread.start()
         log("Servidor de calibração iniciado. Acesse http://<ip_do_raspberry>:5000")

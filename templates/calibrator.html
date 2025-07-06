@@ -155,6 +155,32 @@
                 });
             });
         });
+
+        // Lógica do slider de Threshold
+        const thresholdSlider = document.getElementById('threshold-slider');
+        const thresholdValueSpan = document.getElementById('threshold-value');
+        let thresholdTimer;
+
+        thresholdSlider.addEventListener('input', (e) => {
+            // Atualiza o valor no HTML imediatamente
+            thresholdValueSpan.textContent = e.target.value;
+            
+            // Usa um timer para não sobrecarregar o servidor (debounce)
+            clearTimeout(thresholdTimer);
+            
+            thresholdTimer = setTimeout(() => {
+                fetch('/update_threshold', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ threshold: e.target.value })
+                }).then(response => response.json())
+                  .then(data => {
+                      if(data.status !== 'success') {
+                          console.error('Falha ao atualizar o threshold.');
+                      }
+                  });
+            }, 150); // Envia o valor 150ms depois que o usuário para de mover
+        });
     });
     </script>
 </body>
