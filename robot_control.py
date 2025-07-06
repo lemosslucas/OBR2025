@@ -238,7 +238,7 @@ def turn_90(turn_function, gyro_bias_z, get_current_img):
 
         # turn on the side 
         turn_function(curve_velocity, curve_velocity)
-        turn_until_angle(90, gyro_bias_z=gyro_bias_z)
+        turn_until_angle(85, gyro_bias_z=gyro_bias_z)
         
         log('curva de 90 feita')
     else:

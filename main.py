@@ -73,6 +73,8 @@ def toggle_robot_state(gpio, level, tick):
 pi.callback(BTN_PIN, pigpio.FALLING_EDGE, toggle_robot_state)
 gyro_bias_z = calibrate_gyro(300)
 
+error_none = 0
+
 def run_robot_control():
     # define global variables
     global robot_running, img
@@ -115,10 +117,12 @@ def run_robot_control():
         # if not has line it try to come back of line
         angulo = read_accelerometer()
         
+        # avoid false positive
         if error is None and (angulo <= ramp_slope or angulo >= -ramp_slope):
-            adjust_move(PID, velocity_ramp, velocity_ramp)
-            time.sleep(0.2)
+            error_none += 1        
 
+        if error_none >= FRAMES_TO_LOST:
+            error_none = 0
             log("Perdeu a linha, deu merda")
             motors.stop_motor()
             led_feedback(red_led, LINE_LOST)

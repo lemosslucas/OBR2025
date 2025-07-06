@@ -19,7 +19,7 @@ ERROR = -1
 TIME_OUT_SEARCH = 1
 DIFF_MOTOR = 0
 MIN_RECOVERY_AREA = 50
-FRAMES_TO_LOST = 2
+FRAMES_TO_LOST = 5
 COLOR_OFFSET = 10
 
 # constants for led signals
@@ -49,7 +49,7 @@ curve_velocity = 220
 # define the ramp slope and the upper on the motor to upper the ramp
 ramp_slope = 15 
 velocity_ramp = 220
-velocity_ramp_down = 80
+velocity_ramp_down = 30
 
 """
 PID values
