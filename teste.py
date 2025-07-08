@@ -1,131 +1,166 @@
-from constants import servo_arm, servo_shovel, ERROR
-from hardware_setup import motors, green_led, red_led, pi 
-from time import  sleep
+import time
+# Importa as funções e objetos necessários que se comunicam via serial
+from robot_control import (measure_distance, read_accelerometer, 
+                           turn_until_angle, motors)
+from motors import send_command # Usaremos para o novo teste do servo
+from constants import ERROR
 
-def teste_led(led):
-    try:    
-        while True:
-            led.on()         # Acende o LED
-            sleep(0.5)       # Espera 0.5 segundo
-            led.off()        # Apaga o LED
-            sleep(0.5)       # Espera 0.5 segundo
+# Esta função agora usa o mesmo comando serial do projeto principal
+def teste_leds():
+    print("\n--- Teste dos LEDs ---")
+    print("LED vermelho piscará 5 vezes.")
+    try:
+        for _ in range(5):
+            send_command("L,vermelho,1\n") # Liga o LED vermelho
+            time.sleep(0.3)
+            send_command("L,vermelho,0\n") # Desliga
+            time.sleep(0.3)
+        
+        print("LED verde piscará 5 vezes.")
+        for _ in range(5):
+            send_command("L,verde,1\n") # Liga o LED verde
+            time.sleep(0.3)
+            send_command("L,verde,0\n") # Desliga
+            time.sleep(0.3)
 
     except KeyboardInterrupt:
-        print("\nLED APAGADO.")
-        led.off()
+        print("\nTeste de LED interrompido.")
+    finally:
+        # Garante que os LEDs terminem desligados
+        send_command("L,vermelho,0\n")
+        send_command("L,verde,0\n")
+    print("--- Fim do teste de LEDs ---")
+
 
 def teste_motors():
+    print("\n--- Teste dos Motores ---")
     try:
-        print("Movendo para frente")
-        motors.run(200, 200)
-        sleep(6)
+        print("Movendo para frente por 2 segundos...")
+        motors.run(150, 150)
+        time.sleep(2)
 
-        print('parou')
+        print('Parando por 1 segundo...')
         motors.stop_motor()
-        sleep(3)
+        time.sleep(1)
         
-        print("Movendo para trás")
-        motors.run_backward(100, 100)
-        sleep(6)
+        print("Movendo para trás por 2 segundos...")
+        motors.run_backward(150, 150)
+        time.sleep(2)
 
-        print("Parando")
+        print("Parando.")
         motors.stop_motor()
     except KeyboardInterrupt:
-        print('Teste motor finalizdo')
+        print('\nTeste de motor finalizado pelo usuário.')
+    finally:
+        motors.stop_motor()
+    print("--- Fim do teste dos Motores ---")
+
 
 def teste_rotacao():
-    from robot_control import turn_until_angle
-    print("Girando 90°")
-    motors.run(255, 0)
-    turn_until_angle(90)
-    motors.stop_motor()
-
-def teste_servo():
-    from robot_control import angle_to_pulse
+    print("\n--- Teste de Rotação (Giroscópio) ---")
     try:
-        print("Movendo braço para 45°")
-        pi.set_servo_pulsewidth(servo_arm, angle_to_pulse(45))
-        sleep(1)
+        print("Girando 90 graus para a direita...")
+        # Para girar para a direita, o motor esquerdo vai para frente e o direito para trás
+        motors.turn_right(200, 200)
+        turn_until_angle(90, gyro_bias_z=1.8) # Usando o bias do seu main.py
+        
+        time.sleep(1) # Pausa
 
-        print("Movendo pá para 35°")
-        pi.set_servo_pulsewidth(servo_shovel, angle_to_pulse(35))
-        sleep(1)
+        print("Girando 90 graus para a esquerda...")
+        motors.turn_left(200, 200)
+        turn_until_angle(90, gyro_bias_z=1.8)
 
-        # Reset
-        pi.set_servo_pulsewidth(servo_arm, angle_to_pulse(90))
-        pi.set_servo_pulsewidth(servo_shovel, angle_to_pulse(90))
     except KeyboardInterrupt:
-        print("Teste do servo finalizado")
+        print('\nTeste de rotação finalizado pelo usuário.')
+    finally:
+        motors.stop_motor()
+    print("--- Fim do teste de rotação ---")
+
 
 def teste_ultrassonico():
-    from robot_control import measure_distance
+    print("\n--- Teste do Ultrassônico ---")
     try:
-        print("Lendo distância")
+        print("Realizando uma leitura de distância...")
         distancia = measure_distance()
 
-        if distancia == ERROR:
-            print("Erro na leitura do sensor!")
+        if distancia == 999 or distancia == ERROR:
+            print("Erro na leitura do sensor! Verifique a conexão.")
         else:
-            print(f"Distância: {distancia:.2f} cm")
+            print(f"Distância medida: {distancia:.2f} cm")
     except KeyboardInterrupt:
-        print("\nFim do teste do ultrassonico")
+        print("\nFim do teste do ultrassônico.")
+    print("--- Fim do teste do ultrassônico ---")
+
 
 def teste_acelerometro():
-    from robot_control import read_accelerometer
+    print("\n--- Teste do Acelerômetro (Inclinação) ---")
+    print("Pressione CTRL+C para parar.")
     try:
         while True:
             angulo = read_accelerometer()
-            print(f"Inclinação: {angulo:.2f}°")
+            # O read_accelerometer já trata o erro, então podemos imprimir diretamente
+            print(f"Ângulo de inclinação (eixo Y): {angulo:.2f}°", end='\r')
+            time.sleep(0.2)
     except KeyboardInterrupt:
-        print('Fim da mediçaõ da inclinação')
+        print('\n--- Fim da medição da inclinação ---')
 
+
+# Esta função agora testa o botão da maneira que o projeto funciona:
+# lendo a mensagem serial enviada pelo Arduino.
 def teste_botao():
-    # Importa o pino do botão e o objeto 'pi' da configuração
-    from constants import BTN_PIN
-    from hardware_setup import pi
-    from time import sleep
-
+    from hardware_setup import ser
     print("\n--- Teste do Botão ---")
-    print("Pressione o botão para ver a mensagem.")
-    print("Pressione CTRL+C para voltar ao menu principal.")
+    print("Pressione o botão no robô para ver a mensagem.")
+    print("Pressione CTRL+C para voltar ao menu.")
     
     try:
         while True:
-            if pi.read(BTN_PIN) == 0:
-                print(">>> Botão Pressionado! <<<")
-                sleep(0.5) 
-            
-            sleep(0.05)
+            if ser and ser.is_open:
+                message = ser.readline().decode('utf-8').strip()
+                if message == "BTN,1":
+                    print(">>> Mensagem 'BTN,1' recebida do Arduino! Teste OK! <<<")
+            time.sleep(0.05)
 
     except KeyboardInterrupt:
         print("\n--- Fim do teste do botão ---")
 
 if __name__ == '__main__':
-    opcao = 1
+    # Garante que as correções de bugs do IMU sejam aplicadas
+    print("Lembrete: Certifique-se de que os bugs no arquivo 'robot_control.py' foram corrigidos para os testes de rotação e acelerômetro funcionarem.")
+    
+    while True:
+        print('\n--- MENU DE TESTES DO ROBÔ ---')
+        print('(1) - Testar LEDs')
+        print('(2) - Testar Acelerômetro (Inclinação)')
+        print('(4) - Testar Sensor Ultrassônico')
+        print('(5) - Testar Motores (Frente/Trás)')
+        print('(6) - Testar Rotação com Giroscópio')
+        print('(7) - Testar Botão de Partida')
+        print('(0) - Sair')
 
-    while opcao != 0:
-        print('Escolha o componente a ser testado\n'
-        '(1) - LED\n(2) - Acelerometro\n(3) - Servo\n(4) - Ultrassonico\n(5) - Motor\n(6) - Rotaçao dos motors\n' \
-        '(0) - Sair')
-
-        opcao = int(input(''))
+        try:
+            opcao = int(input('Escolha o componente a ser testado: '))
+            
+            if opcao == 1:
+                teste_leds()
+            elif opcao == 2:
+                teste_acelerometro()
+            elif opcao == 4:
+                teste_ultrassonico()
+            elif opcao == 5:
+                teste_motors()
+            elif opcao == 6:
+                teste_rotacao()
+            elif opcao == 7:
+                teste_botao()
+            elif opcao == 0:
+                print("Saindo do programa de testes.")
+                break
+            else:
+                print('Opção inválida. Tente novamente.')
         
-        if opcao == 1:
-            print('Led Vermelho')
-            teste_led(red_led)
-            print('Led Verde')
-            teste_led(green_led)
-        elif opcao == 2:
-            teste_acelerometro()
-        elif opcao == 3:
-            teste_servo()
-        elif opcao == 4:
-            teste_ultrassonico()
-        elif opcao == 5:
-            teste_motors()
-        elif opcao == 6:
-            teste_rotacao()
-        elif opcao == 7:
-            teste_botao()
-        else:
-            print('digita certo')
+        except ValueError:
+            print("Entrada inválida. Por favor, digite um número.")
+        
+        # Pausa para o usuário ler a saída antes de mostrar o menu novamente
+        input("\nPressione Enter para continuar...")

@@ -1,17 +1,16 @@
 import cv2 
 from line_detection import detect_line, process_image
-from robot_control import (measure_distance, avoid_obstacle, calibrate_gyro,
+from robot_control import (measure_distance, avoid_obstacle,
                            adjust_move, calculate_PID, led_feedback, turn_90, try_comeback_line,
-                           read_accelerometer, do_dead_end)
+                           read_accelerometer, do_dead_end, set_led, motors)
 from logger import log
 from constants import *
 import constants
 import time
-from hardware_setup import red_led, green_led, motors, disconnect_all_hardware, pi
+from hardware_setup import ser
 from threading import Thread
 
-from picamera2 import Picamera2
-import pigpio
+from picamera2 import Picamera2 
 
 robot_running = False
 img = None
@@ -26,13 +25,13 @@ try:
     log('aguardando a inicializacao da camera')
     time.sleep(1)    
     log("Camera ligou")
-    green_led.on()
+    set_led('verde', 1)
 except RuntimeError as e:
     log('Deu erro na camera')
-    red_led.on()
+    set_led('vermelho', 1)
 except IndexError as e:
     log('deu erro')
-    red_led.on()
+    set_led('vermelho', 1)
 
 
 def get_current_img():
@@ -56,23 +55,7 @@ def update_camera_feed():
             # Uma pequena pausa antes de tentar novamente
             time.sleep(0.5)
 
-def toggle_robot_state(gpio, level, tick):
-    global robot_running
-    # Inverte o estado (True -> False, False -> True)
-    robot_running = not robot_running 
-    
-    if robot_running:
-        log("Btn pressionado, ligando")
-        led_feedback(green_led, START_ROBOT)
-        red_led.off()
-    else:
-        log("Btn pressionado, parando")
-        motors.stop_motor()
-        red_led.on()
-
-pi.callback(BTN_PIN, pigpio.FALLING_EDGE, toggle_robot_state)
-gyro_bias_z = calibrate_gyro(300)
-
+gyro_bias_z = 1.8
 
 def run_robot_control():
     # define global variables
@@ -81,7 +64,7 @@ def run_robot_control():
 
     # loop to read the cam
     while robot_running:
-        red_led.off()
+        set_led('vermelho', 0)
         
         # extract the cam info
         if img is None:
@@ -125,26 +108,26 @@ def run_robot_control():
             error_none = 0
             log("Perdeu a linha, deu merda")
             motors.stop_motor()
-            led_feedback(red_led, LINE_LOST)
+            led_feedback("verde", LINE_LOST)
 
             # try forward
             if try_comeback_line(motors.run_backward, get_current_img, duration=2):
-                led_feedback(green_led, LINE_FOUND)
+                led_feedback("verde", LINE_FOUND)
                 continue 
                 
             # try turn right
             if try_comeback_line(motors.turn_right, get_current_img, duration=2.0):
-                led_feedback(green_led, LINE_FOUND) 
+                led_feedback("verde", LINE_FOUND) 
                 continue
 
             # try turn left
             if try_comeback_line(motors.turn_left, get_current_img, duration=2.0):
-                led_feedback(green_led, LINE_FOUND)
+                led_feedback("verde", LINE_FOUND)
                 continue
 
             log("Não foi possível recuperar a linha.")
             motors.stop_motor()
-            red_led.on()
+            set_led('vermelho', 1)
             robot_running = False    
             
 
@@ -154,7 +137,7 @@ def run_robot_control():
             # verify if is going to rescue area
             if colour == GRAY:
                 log('Rescue area detected')
-                led_feedback(red_led, GIVEWAY_RESCUE)
+                led_feedback("vermelho", GIVEWAY_RESCUE)
 
             # verify if has a 90°curve
             elif colour == GREEN:
@@ -173,7 +156,6 @@ def run_robot_control():
                 # stop the car on the red line
                 motors.stop_motor()
                 robot_running = False
-                disconnect_all_hardware()
                 # ALL it's run fine
                 break 
         
@@ -205,22 +187,61 @@ def run_robot_control():
                 constants.previous_error = error[0]
 
     # turn off the leds
-    red_led.on()
+    set_led('vermelho', 0)
+
+def listen_for_arduino():
+    """Thread que ouve por mensagens do Arduino (como o botão)."""
+    global robot_running
+    log("Thread de escuta do Arduino iniciada.")
+    while True:
+        if ser and ser.is_open:
+            try:
+                # O timeout na configuração da serial faz com que não bloqueie para sempre
+                message = ser.readline().decode('utf-8').strip()
+                if message == "BTN,1":
+                    robot_running = not robot_running # Inverte o estado
+                    if robot_running:
+                        log("Comando de partida recebido do Arduino!")
+                        set_led("vermelho", 0)
+                        led_feedback("verde", 2) # Pisca 2x para confirmar
+                    else:
+                        log("Comando de parada recebido do Arduino!")
+                        motors.stop_motor()
+                        set_led("vermelho", 1)
+            except Exception as e:
+                # Em caso de erro de decodificação, etc.
+                time.sleep(0.1)
+        else:
+            # Se a serial não estiver conectada, espera um pouco
+            time.sleep(1)
+
 
 if __name__ == '__main__':
-    print('esperando  o sinal')
-
     log("Iniciando a thread do feed da câmera...")
     camera_thread = Thread(target=update_camera_feed, daemon=True)
     camera_thread.start()
+
+    log("Iniciando a thread de escuta do Arduino...")
+    arduino_listener_thread = Thread(target=listen_for_arduino, daemon=True)
+    arduino_listener_thread.start()
+
+    log("Setup completo. Aguardando comando de partida do botão...")
+    set_led("verde", 1)
 
     try:
         while True:
             # if true, run the contol.
             if robot_running:
                 run_robot_control()
+            else:
+                time.sleep(0.1)
 
     except KeyboardInterrupt:
         log("parei pelo teclado")
+    
     finally:
-        disconnect_all_hardware()
+        motors.stop_motor()
+        set_led("vermelho", 1)
+        if ser and ser.is_open:
+            ser.close()
+        log("Motores parados e programa finalizado.")

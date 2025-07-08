@@ -1,13 +1,4 @@
 """
-Component's pins
-"""
-TRIG = 27
-ECHO = 22
-servo_arm = 14
-servo_shovel = 15
-BTN_PIN = 17
-
-"""
 Constant values
 """
 MAX_DISTANCE = 10

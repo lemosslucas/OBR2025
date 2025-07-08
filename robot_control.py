@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import time
+import serial
 
 from constants import (base_left_velocity,
                        base_right_velocity,velocity_ramp,
@@ -9,24 +10,44 @@ from constants import (base_left_velocity,
                        TRIG, ECHO, ERROR, FRAMES_TO_LOST, MIN_RECOVERY_AREA)
 import constants
 
-from hardware_setup import motors, pi, accelerometer
+from hardware_setup import ser
 from ball_detection import find_ball
 from logger import log 
 from line_detection import detect_line
+from motors import MotorController, send_command
 
-def led_feedback(led, times=1):
-    """
-    Função para dar o feedback do robo a partir do LED
-    params: 
-        LED (objeto)
-        times: repeticoes do sinal
-    """
-    for i in range(times):
-        led.on()
+if ser:
+    motors = MotorController()
+else:
+    motors = None
+
+def set_led(color_name, state):
+    """Envia um comando para ligar (1) ou desligar (0) um LED."""
+    cmd = f"L,{color_name},{state}\n"
+    send_command(cmd)
+
+def measure_distance():
+    """Requisita a distância do Arduino e espera pela resposta."""
+    if not ser or not ser.is_open:
+        return 999 # Retorna um valor alto se a serial não estiver disponível
+
+    send_command("R,dist\n") # Envia a requisição
+    try:
+        response = ser.readline().decode('utf-8').strip()
+        if response.startswith("D,"):
+            # Extrai o valor da distância da resposta "D,15"
+            return int(response.split(',')[1])
+    except (serial.SerialException, IndexError, ValueError):
+        return 999 # Retorna valor alto em caso de erro de comunicação
+    return 999 # Retorna valor alto se não receber resposta válida
+
+def led_feedback(color_name, times=1):
+    """Envia comandos seriais para piscar um LED."""
+    for _ in range(times):
+        send_command(f"L,{color_name},1\n")
         time.sleep(0.1)
-        led.off()
+        send_command(f"L,{color_name},0\n")
         time.sleep(0.1)
-    led.off()
 
 def get_roi(img):
     """
@@ -158,30 +179,51 @@ def try_comeback_line(move_function, get_current_img, duration=1.5):
 """
 Accelerometer
 """
-def calibrate_gyro(samples=400):
+def get_gyro():
+    if not ser or not ser.is_open:
+        return None
+    
+    send_command("R,imu\n") # Envia a nova requisição
+    try:
+        response = ser.readline().decode('utf-8').strip()
+        if response.startswith("I,"):
+            parts = response.split(',')
+            # Retorna um dicionário com os dados
+            return {
+                'ax': float(parts[1]), 'ay': float(parts[2]), 'az': float(parts[3]),
+                'gx': float(parts[4]), 'gy': float(parts[5]), 'gz': float(parts[6]),
+            }
+    except Exception as e:
+        log(f"Erro ao ler dados do IMU: {e}")
+        return None
+    return None
+    
+def read_accelerometer():
     """
-    Measure the deviation (bias) of giroscope on Z label when the robot is stopped.
-    params:
-        samples: number of measurement
-    return:
-        float: deviation on Z label
+    Reads the current accelerometer data and calculates the 
+    inclination angle of the robot in degrees.
+
+    The angle is computed using the arctangent of the x and z 
+    axes values, assuming the robot is tilting mainly in the 
+    x-z plane.
+
+    Returns:
+        float: The inclination angle of the robot in degrees.
     """
-    log("Calibrando o giroscópio... Mantenha o robô parado.")
-    sum_gz = 0
-    for _ in range(samples):
-        try:
-            gyro_data = accelerometer.get_gyro_data()
-            sum_gz += gyro_data['z']
-            time.sleep(0.01)
-        except Exception as e:
-            log(f"Erro durante calibração: {e}")
-            return 0
-            
-    bias_gz = sum_gz / samples
-    log(f"Calibração concluída. Bias do Giroscópio (Gz) = {bias_gz:.4f}")
+    try: 
+        # read the current position of robot
+        data = get_gyro()
+        if data:
+            # calculate the inclination of robot using x and z labels
+            inclination_angle = np.arctan2(data['ay'], data['az']) * (180 / np.pi)
 
-    return bias_gz
-
+            # return the inclination of robot
+            return inclination_angle
+        return ERROR
+    except Exception as e:
+        log("Deu merda no acelerometro")
+        return ERROR
+    
 def verify_lost_line(get_current_img, timeout=5.0):
     """
     """
@@ -288,13 +330,13 @@ def turn_until_angle(target_angle=90, gyro_bias_z=0):
 
     while abs(angle_z) < target_angle:
         try:
-            data = accelerometer.get_gyro_data()
+            data = get_gyro()
             current_time = time.time()
             delta_time = current_time - start_time
             start_time = current_time
 
             # get the angular velocity
-            angular_velocity = data['z'] - gyro_bias_z
+            angular_velocity = data['gz'] - gyro_bias_z
 
             angle_z += angular_velocity * delta_time
             time.sleep(0.01)
@@ -367,51 +409,6 @@ def avoid_obstacle(cam, gyro_bias_z):
     log('Desvio feito! Procurando a linha')
     motors.run(150, 150)
 
-def measure_distance():
-    """
-    Measures the distance to the nearest object in front of the robot using an ultrasonic sensor.
-
-    The function sends a 10-microsecond pulse to the TRIG pin, waits for the response 
-    from the ECHO pin, and calculates the distance based on the time taken for the 
-    sound wave to return.
-
-    Returns:
-        float: Distance to the nearest object in centimeters.
-    """
-    # turn on the sensor 10 micro sec
-    pi.gpio_trigger(TRIG, 10)
-
-    start_time = time.time()
-    timeout = 0.2
-    pulse_start = time.time()
-
-    # wait for the ECHO pin to go HIGH
-    while pi.read(ECHO) == 0:
-        pulse_start = time.time()
-        # to ensure an error situation
-        if pulse_start - start_time > timeout:
-            print("ECHO nao ligou timeout!")
-            return ERROR
-        
-    # wait for the ECHO pin go to LOW
-    while pi.read(ECHO) == 1:
-        # to ensure an error situation
-        if time.time() - start_time > timeout:
-            print("TRIG nao ligou, timeout")
-            return ERROR
-
-    # get the pulse end
-    pulse_end = time.time()
-
-    # calculate the wave duration
-    duration = pulse_end - pulse_start
-
-    # (duration  * 34300) / 2 velocity of sound
-    distance = duration * 17150
-
-    # return the distance in cm
-    return distance
-
 def angle_to_pulse(angle):
     """
     Converts an angle in degrees to a pulse width in microseconds 
@@ -427,153 +424,6 @@ def angle_to_pulse(angle):
         float: The corresponding pulse width in microseconds.
     """
     return 500 + (angle / 180.0) * 2000
-
-def read_accelerometer():
-    """
-    Reads the current accelerometer data and calculates the 
-    inclination angle of the robot in degrees.
-
-    The angle is computed using the arctangent of the x and z 
-    axes values, assuming the robot is tilting mainly in the 
-    x-z plane.
-
-    Returns:
-        float: The inclination angle of the robot in degrees.
-    """
-    try: 
-        # read the current position of robot
-        data = accelerometer.get_accel_data() 
-
-        # calculate the inclination of robot using x and z labels
-        inclination_angle = np.arctan2(data['y'], data['z']) * (180 / np.pi)
-
-        # return the inclination of robot
-        return inclination_angle
-    except Exception as e:
-        log("Deu merda no acelerometro")
-        return ERROR
-
-"""
-Rescue area
-"""
-def rescue_area(cam):
-    # joining on the rescue area
-    motors.run(base_right_velocity, base_left_velocity)
-    time.sleep(2)
-
-    # loop to get the balls
-    while True:
-        # update the image
-        has_frame, img = cam.read()
-        
-        # verify the cam
-        if not has_frame:
-            log("Erro na câmera durante a busca.")
-            break
-        
-        img = get_roi(img)
-
-        # save the state on rescue area
-        state = catch_balls_on_rescue_area(img)
-
-        # try to find a ball
-        if state == BALL_NOT_FOUND:
-            # clock the initial time to search
-            start_search = time.time()
-            
-            while True:
-                # update the image
-                has_frame, img = cam.read()
-
-                # verify the cam
-                if not has_frame:
-                    log("Erro na câmera durante a busca.")
-                    break
-
-                # resized image
-                img = get_roi(img)
-                
-                # searching the balls on rescue area
-                ball_found, start_search = search_balls_on_rescue_area(img, start_search)
-                
-                # stop the loop when ball was found
-                if ball_found:
-                    break
-
-        # all the bals was saved                
-        if state == BALLS_SAVED:
-            # finish the work on rescue area
-            break
-
-def catch_balls_on_rescue_area(img):
-    """
-    Not implemented yet!
-    """
-    
-    # find the balls on the area
-    ball_colour, (x, y) = find_ball(img)
-
-    if x is None or y is None:
-        return BALL_NOT_FOUND
-
-    # if the robot is so near at the ball it stop and catch the ball
-    if y > MIN_DISTANCE_BALL:
-        motors.stop_motor()
-
-        # catch the ball
-        pi.set_servo_pulsewidth(servo_arm, angle_to_pulse(45))
-        time.sleep(1)
-        pi.set_servo_pulsewidth(servo_shovel, angle_to_pulse(35))
-        time.sleep(1)
-    
-    # calculate the distance
-    error = np.abs(robot_position_x - x)
-
-    # calculate the proportional error
-    kp = 0.1
-    proportional = int(kp * error)
-
-    #calculate the new velocity to go into the ball
-    right_velocity = max(0, min(base_right_velocity - proportional, 255))
-    left_velocity = max(0, min(base_left_velocity + proportional, 255))
-
-    # run into the ball position
-    motors.run(right_velocity, left_velocity)
-
-    # find where need put the ball
-    # basket_color, basket_position = find_basket(img)
-
-def search_balls_on_rescue_area(img, start_search):
-    """
-    Searching the balls on rescue area
-    """
-
-    # turn trying to find the balls
-    motors.run(-base_right_velocity, base_left_velocity)
-    # search again
-    ball_colour, (x, y) = find_ball(img)
-    
-    if x is not None or y is not None:
-        # stop the car on position where has a balls
-        motors.stop_motor()
-
-        # return ball was found and start_search time
-        return True, start_search
-    
-    # end time was search was completed
-    end_search = time.time()
-    
-    # if the search time is bigger than 10 sec
-    if np.abs(start_search - end_search) > 10:
-        # run to a new position
-        motors.run(base_left_velocity, base_left_velocity)
-        time.sleep(2)
-        
-        # return the reseted start time
-        start_search = time.time()
-
-    # return the ball wasn't found and start_search time
-    return False, start_search 
 
 if __name__ == "__main__":
     pass
