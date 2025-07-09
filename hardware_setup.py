@@ -1,9 +1,8 @@
 import serial
 import time
 from logger import log 
-from motors import MotorController
 
-# conect with arduino
+# connect with arduino
 try:
     ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
     time.sleep(2)

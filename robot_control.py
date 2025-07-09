@@ -3,11 +3,8 @@ import cv2
 import time
 import serial
 
-from constants import (base_left_velocity,
-                       base_right_velocity,velocity_ramp,
-                       servo_arm, servo_shovel, robot_position_x, curve_velocity,
-                       BALL_FOUND, BALL_NOT_FOUND, BALLS_SAVED, MIN_DISTANCE_BALL,
-                       TRIG, ECHO, ERROR, FRAMES_TO_LOST, MIN_RECOVERY_AREA)
+from constants import (base_left_velocity, base_right_velocity,curve_velocity,
+                       ERROR, FRAMES_TO_LOST, MIN_RECOVERY_AREA)
 import constants
 
 from hardware_setup import ser
@@ -336,9 +333,14 @@ def turn_until_angle(target_angle=90, gyro_bias_z=0):
             start_time = current_time
 
             # get the angular velocity
-            angular_velocity = data['gz'] - gyro_bias_z
+            angular_velocity_rad = data['gz'] - gyro_bias_z
 
+            # convert to degree
+            angular_velocity = angular_velocity_rad * (180/np.pi)
+            
             angle_z += angular_velocity * delta_time
+
+            print(angle_z)
             time.sleep(0.01)
         except Exception as e:
             log(f'Deu merda lendo o osciloscopio {e}')

@@ -62,13 +62,13 @@ def teste_rotacao():
         print("Girando 90 graus para a direita...")
         # Para girar para a direita, o motor esquerdo vai para frente e o direito para trás
         motors.turn_right(200, 200)
-        turn_until_angle(90, gyro_bias_z=1.8) # Usando o bias do seu main.py
+        turn_until_angle(90, gyro_bias_z=0) # Usando o bias do seu main.py
         
         time.sleep(1) # Pausa
 
         print("Girando 90 graus para a esquerda...")
         motors.turn_left(200, 200)
-        turn_until_angle(90, gyro_bias_z=1.8)
+        turn_until_angle(90, gyro_bias_z=0)
 
     except KeyboardInterrupt:
         print('\nTeste de rotação finalizado pelo usuário.')
