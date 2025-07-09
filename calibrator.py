@@ -3,7 +3,7 @@ import time
 import cv2
 from flask import Flask, Response, render_template, request, jsonify
 from threading import Thread
-#from picamera2 import Picamera2
+from picamera2 import Picamera2
 import numpy as np
 
 # Importações dos módulos do seu projeto

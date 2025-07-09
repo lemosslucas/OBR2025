@@ -1,8 +1,9 @@
-from hardware_setup import ser
+from hardware_setup import ser, serial_lock
 
 def send_command(command):
-    if ser and ser.is_open:
-        ser.write(command.encode('utf-8'))
+    with serial_lock:
+        if ser and ser.is_open:
+            ser.write(command.encode('utf-8'))
 
 class MotorController:
     def run(self, velocityRight, velocityLeft):

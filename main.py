@@ -7,7 +7,7 @@ from logger import log
 from constants import *
 import constants
 import time
-from hardware_setup import ser
+from hardware_setup import ser, serial_lock
 from threading import Thread
 
 from picamera2 import Picamera2 
@@ -55,8 +55,6 @@ def update_camera_feed():
             # Uma pequena pausa antes de tentar novamente
             time.sleep(0.5)
 
-gyro_bias_z = 1.8
-
 def run_robot_control():
     # define global variables
     global robot_running, img
@@ -91,7 +89,7 @@ def run_robot_control():
 
         if distance is not None and distance <= MAX_DISTANCE:
             log('Avoiding obstacle')
-            avoid_obstacle(cam, gyro_bias_z)
+            avoid_obstacle(cam)
         
         # calculate the error
         error, is_curve, has_colour, _ = detect_line(img, img_roi)
@@ -144,12 +142,12 @@ def run_robot_control():
                 # turn on the correct side
                 if side_curve == LEFT:
                     log('90 degree turn on left')
-                    turn_90(motors.turn_left, gyro_bias_z, get_current_img)
+                    turn_90(motors.turn_left,  get_current_img)
                 elif side_curve == RIGHT:
                     log('90 degree turn on right')
-                    turn_90(motors.turn_right, gyro_bias_z, get_current_img)
+                    turn_90(motors.turn_right,  get_current_img)
                 elif side_curve == DEAD_END:
-                    do_dead_end(gyro_bias_z)
+                    do_dead_end()
 
             elif colour == RED:
                 log('finish line')
@@ -163,11 +161,11 @@ def run_robot_control():
         if is_curve is not False:
             if is_curve is LEFT:
                 log('90 degree turn on left')
-                turn_90(motors.turn_left, gyro_bias_z, get_current_img)
+                turn_90(motors.turn_left, get_current_img)
                 
             elif is_curve is RIGHT:
                 log('90 degree turn on right')
-                turn_90(motors.turn_right, gyro_bias_z, get_current_img)
+                turn_90(motors.turn_right, get_current_img)
                 
         else:
             PID = calculate_PID(error, constants.previous_error, constants.Kp, constants.Kd, constants.Ki, pid_state)
@@ -194,26 +192,28 @@ def listen_for_arduino():
     global robot_running
     log("Thread de escuta do Arduino iniciada.")
     while True:
-        if ser and ser.is_open:
-            try:
-                # O timeout na configuração da serial faz com que não bloqueie para sempre
-                message = ser.readline().decode('utf-8').strip()
-                if message == "BTN,1":
-                    robot_running = not robot_running # Inverte o estado
-                    if robot_running:
-                        log("Comando de partida recebido do Arduino!")
-                        set_led("vermelho", 0)
-                        led_feedback("verde", 2) # Pisca 2x para confirmar
-                    else:
-                        log("Comando de parada recebido do Arduino!")
-                        motors.stop_motor()
-                        set_led("vermelho", 1)
-            except Exception as e:
-                # Em caso de erro de decodificação, etc.
-                time.sleep(0.1)
-        else:
-            # Se a serial não estiver conectada, espera um pouco
-            time.sleep(1)
+        with serial_lock:
+            if ser and ser.is_open and ser.in_waiting > 0:
+                try:
+                    # O timeout na configuração da serial faz com que não bloqueie para sempre
+                    message = ser.readline().decode('utf-8').strip()
+                    if message == "BTN,1":
+                        robot_running = not robot_running # Inverte o estado
+                        if robot_running:
+                            log("Comando de partida recebido do Arduino!")
+                            set_led("vermelho", 0)
+                            led_feedback("verde", 2) # Pisca 2x para confirmar
+                        else:
+                            log("Comando de parada recebido do Arduino!")
+                            motors.stop_motor()
+                            set_led("vermelho", 1)
+                except Exception as e:
+                    # Em caso de erro de decodificação, etc.
+                    time.sleep(0.1)
+            else:
+                # Se a serial não estiver conectada, espera um pouco
+                time.sleep(0.5)
+        time.sleep(0.05)
 
 
 if __name__ == '__main__':

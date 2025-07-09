@@ -1,6 +1,7 @@
 import serial
 import time
 from logger import log 
+from threading import Lock
 
 # connect with arduino
 try:
@@ -11,3 +12,4 @@ except serial.SerialException as e:
     log(f"Erro ao conectar com o Arduino: {e}")
     ser = None
 
+serial_lock = Lock()

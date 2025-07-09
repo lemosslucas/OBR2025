@@ -13,8 +13,8 @@ const int MOTOR_LEFT_ANTI = 9;
 const int MOTOR_RIGHT_CLKWISE = 10;  
 const int MOTOR_RIGHT_ANTI = 11;
 
-const int TRIG_PIN = A5;
-const int ECHO_PIN = A4;
+const int TRIG_PIN = 3;
+const int ECHO_PIN = 4;
 
 const int GREEN_LED_PIN = A0;
 const int RED_LED_PIN = A1;
@@ -58,7 +58,7 @@ void setup() {
   mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
 
   // Configura a faixa de medição do giroscópio
-  mpu.setGyroRange(MPU6050_RANGE_500_DPS);
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
 
   // Configura o filtro do sensor
   mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);

@@ -7,8 +7,7 @@ from constants import (base_left_velocity, base_right_velocity,curve_velocity,
                        ERROR, FRAMES_TO_LOST, MIN_RECOVERY_AREA)
 import constants
 
-from hardware_setup import ser
-from ball_detection import find_ball
+from hardware_setup import ser, serial_lock
 from logger import log 
 from line_detection import detect_line
 from motors import MotorController, send_command
@@ -25,18 +24,19 @@ def set_led(color_name, state):
 
 def measure_distance():
     """Requisita a distância do Arduino e espera pela resposta."""
-    if not ser or not ser.is_open:
-        return 999 # Retorna um valor alto se a serial não estiver disponível
+    with serial_lock:
+        if not ser or not ser.is_open:
+            return ERROR # Retorna um valor alto se a serial não estiver disponível
 
-    send_command("R,dist\n") # Envia a requisição
-    try:
-        response = ser.readline().decode('utf-8').strip()
-        if response.startswith("D,"):
-            # Extrai o valor da distância da resposta "D,15"
-            return int(response.split(',')[1])
-    except (serial.SerialException, IndexError, ValueError):
-        return 999 # Retorna valor alto em caso de erro de comunicação
-    return 999 # Retorna valor alto se não receber resposta válida
+        send_command("R,dist\n") # Envia a requisição
+        try:
+            response = ser.readline().decode('utf-8').strip()
+            if response.startswith("D,"):
+                # Extrai o valor da distância da resposta "D,15"
+                return int(response.split(',')[1])
+        except (serial.SerialException, IndexError, ValueError):
+            return ERROR # Retorna valor alto em caso de erro de comunicação
+        return ERROR # Retorna valor alto se não receber resposta válida
 
 def led_feedback(color_name, times=1):
     """Envia comandos seriais para piscar um LED."""
@@ -177,23 +177,24 @@ def try_comeback_line(move_function, get_current_img, duration=1.5):
 Accelerometer
 """
 def get_gyro():
-    if not ser or not ser.is_open:
+    with serial_lock:
+        if not ser or not ser.is_open:
+            return None
+        
+        send_command("R,imu\n") # Envia a nova requisição
+        try:
+            response = ser.readline().decode('utf-8').strip()
+            if response.startswith("I,"):
+                parts = response.split(',')
+                # Retorna um dicionário com os dados
+                return {
+                    'ax': float(parts[1]), 'ay': float(parts[2]), 'az': float(parts[3]),
+                    'gx': float(parts[4]), 'gy': float(parts[5]), 'gz': float(parts[6]),
+                }
+        except Exception as e:
+            log(f"Erro ao ler dados do IMU: {e}")
+            return None
         return None
-    
-    send_command("R,imu\n") # Envia a nova requisição
-    try:
-        response = ser.readline().decode('utf-8').strip()
-        if response.startswith("I,"):
-            parts = response.split(',')
-            # Retorna um dicionário com os dados
-            return {
-                'ax': float(parts[1]), 'ay': float(parts[2]), 'az': float(parts[3]),
-                'gx': float(parts[4]), 'gy': float(parts[5]), 'gz': float(parts[6]),
-            }
-    except Exception as e:
-        log(f"Erro ao ler dados do IMU: {e}")
-        return None
-    return None
     
 def read_accelerometer():
     """
@@ -250,7 +251,7 @@ def verify_lost_line(get_current_img, timeout=5.0):
     # line was not lost
     return False
 
-def turn_90(turn_function, gyro_bias_z, get_current_img):
+def turn_90(turn_function, get_current_img):
     """
     Executes a 90-degree turn maneuver using a specified turn function and gyroscope feedback.
 
@@ -264,7 +265,7 @@ def turn_90(turn_function, gyro_bias_z, get_current_img):
 
     Parameters:
         turn_function (function): A function responsible for initiating the motor turn motion.
-        gyro_bias_z (float): The gyroscope Z-axis bias used to calculate angular displacement.
+         (float): The gyroscope Z-axis bias used to calculate angular displacement.
         get_current_img (function): A function that returns the current camera image for line detection.
     """
     if verify_lost_line(get_current_img, timeout=1.0):
@@ -277,13 +278,13 @@ def turn_90(turn_function, gyro_bias_z, get_current_img):
 
         # turn on the side 
         turn_function(curve_velocity, curve_velocity)
-        turn_until_angle(85, gyro_bias_z=gyro_bias_z)
+        turn_until_angle(85, )
         
         log('curva de 90 feita')
     else:
         log('era uma intersecao')
 
-def do_dead_end(gyro_bias_z):
+def do_dead_end():
     """
     """
     # run 0.2 sec
@@ -292,7 +293,7 @@ def do_dead_end(gyro_bias_z):
   
     # turn 90 degre on right
     motors.turn_right(curve_velocity, curve_velocity)
-    turn_until_angle(90, gyro_bias_z)
+    turn_until_angle(90, )
   
     # run backward until find the line again
     motors.run_backward(base_right_velocity, base_left_velocity)
@@ -304,11 +305,11 @@ def do_dead_end(gyro_bias_z):
 
     # turn on right again to finsish 180 curve
     motors.turn_right(curve_velocity, curve_velocity)
-    turn_until_angle(90, gyro_bias_z)
+    turn_until_angle(90, )
     motors.stop_motor()
     time.sleep(0.2)
 
-def turn_until_angle(target_angle=90, gyro_bias_z=0):
+def turn_until_angle(target_angle=90, ):
     """
     Rotates the robot until it reaches the specified angle using accelerometer data.
 
@@ -333,7 +334,7 @@ def turn_until_angle(target_angle=90, gyro_bias_z=0):
             start_time = current_time
 
             # get the angular velocity
-            angular_velocity_rad = data['gz'] - gyro_bias_z
+            angular_velocity_rad = data['gz'] 
 
             # convert to degree
             angular_velocity = angular_velocity_rad * (180/np.pi)
@@ -351,7 +352,7 @@ def turn_until_angle(target_angle=90, gyro_bias_z=0):
     print('Rotation finished')
     time.sleep(0.5)
     
-def avoid_obstacle(cam, gyro_bias_z):
+def avoid_obstacle(cam, ):
     """
     Executes a predefined sequence of movements to avoid an obstacle.
     Turning on 
@@ -382,7 +383,7 @@ def avoid_obstacle(cam, gyro_bias_z):
 
     # state 3
     motors.run(right_velocity, 0)
-    turn_until_angle(90, gyro_bias_z=gyro_bias_z)
+    turn_until_angle(85)
     
     # state 4
     motors.run(right_velocity, left_velocity)
@@ -390,7 +391,7 @@ def avoid_obstacle(cam, gyro_bias_z):
 
     # state 5
     motors.run(0, left_velocity)
-    turn_until_angle(90, gyro_bias_z=gyro_bias_z)
+    turn_until_angle(85)
 
     # state 6
     motors.run(right_velocity, left_velocity)
@@ -398,7 +399,7 @@ def avoid_obstacle(cam, gyro_bias_z):
 
     # state 7
     motors.run(0, left_velocity)
-    turn_until_angle(45, gyro_bias_z=gyro_bias_z)
+    turn_until_angle(45)
 
     # state 8
     motors.run(right_velocity, left_velocity)
@@ -406,7 +407,7 @@ def avoid_obstacle(cam, gyro_bias_z):
 
     #state 9
     motors.run(right_velocity, 0)
-    turn_until_angle(45, gyro_bias_z=gyro_bias_z)
+    turn_until_angle(45)
     
     log('Desvio feito! Procurando a linha')
     motors.run(150, 150)
