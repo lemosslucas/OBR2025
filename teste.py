@@ -25,7 +25,7 @@ def teste_motors():
         sleep(3)
         
         print("Movendo para trás")
-        motors.run_backward(100, 100)
+        motors.run_backward(200, 200)
         sleep(6)
 
         print("Parando")

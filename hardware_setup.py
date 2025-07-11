@@ -9,8 +9,8 @@ from logger import log
 pi = pigpio.pi()
 accelerometer = mpu6050(0x68)
 motors = MotorController()
-green_led = LED(9)
-red_led = LED(10)
+green_led = LED(10)
+red_led = LED(9)
 
 # BUTTON
 pi.set_mode(BTN_PIN, pigpio.INPUT)
