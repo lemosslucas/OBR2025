@@ -108,7 +108,7 @@ def run_robot_control():
 
         if distance is not None and distance <= MAX_DISTANCE:
             log('Avoiding obstacle')
-            avoid_obstacle(cam, gyro_bias_z)
+            avoid_obstacle(gyro_bias_z)
         
         # calculate the error
         error, is_curve, has_colour, _ = detect_line(img, img_roi)
@@ -222,5 +222,5 @@ if __name__ == '__main__':
 
     except KeyboardInterrupt:
         log("parei pelo teclado")
-    finally:
-        disconnect_all_hardware()
+#    finally:
+#        disconnect_all_hardware()

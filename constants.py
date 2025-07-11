@@ -1,3 +1,4 @@
+
 """
 Component's pins
 """
@@ -47,7 +48,7 @@ base_left_velocity =  130
 curve_velocity = 220
 
 # define the ramp slope and the upper on the motor to upper the ramp
-ramp_slope = 15 
+ramp_slope = 10
 velocity_ramp = 220
 velocity_ramp_down = 30
 

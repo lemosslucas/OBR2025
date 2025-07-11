@@ -27,8 +27,9 @@ def calculate_error(target_line, img_width):
     if moments["m00"] != 0:
         center_x = int(moments["m10"] / moments["m00"])
     else:
+        a = (None, None)
         # Cannot calculate centroid, return no error
-        return None
+        return a
     
     # The center of the image
     image_center_x = img_width // 2
@@ -68,7 +69,7 @@ def identify_colour(img):
                  if no significant color region is foun
     """
     if img is None: 
-        return None
+        return None, None
     
     # convert image in HSV scale
     hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)

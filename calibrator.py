@@ -3,7 +3,7 @@ import time
 import cv2
 from flask import Flask, Response, render_template, request, jsonify
 from threading import Thread
-#from picamera2 import Picamera2
+from picamera2 import Picamera2
 import numpy as np
 
 # Importações dos módulos do seu projeto
@@ -19,8 +19,8 @@ cam = None
 img = None
 
 dynamic_color_ranges = {
-    GREEN: {'lower': [35, 80, 80], 'upper': [85, 255, 255]},
-    RED:   {'lower': [160, 100, 100], 'upper': [180, 255, 255]},
+    GREEN: {'lower': [35, 80, 35], 'upper': [70, 255, 255]},
+    RED:   {'lower': [119, 240, 75], 'upper': [121, 255, 220]},
     GRAY:  {'lower': [0, 0, 50], 'upper': [180, 50, 220]}
 }
 
