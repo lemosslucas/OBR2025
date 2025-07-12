@@ -2,33 +2,13 @@ import numpy as np
 import cv2
 import time
 
-from constants import (base_left_velocity, base_right_velocity,
-                       servo_arm, servo_shovel, robot_position_x, curve_velocity,
-                       BALL_FOUND, BALL_NOT_FOUND, BALLS_SAVED, MIN_DISTANCE_BALL,
+from constants import (base_left_velocity, base_right_velocity, curve_velocity,
                        ERROR, FRAMES_TO_LOST, MIN_RECOVERY_AREA)
 import constants
 
 from hardware_setup import motors, pi, accelerometer, TRIG, ECHO
-from ball_detection import find_ball
 from logger import log 
 from line_detection import detect_line
-
-def check_for_stop():
-    """Função auxiliar para verificar e reagir à parada."""
-    if not constants.robot_running:
-        motors.stop_motor()
-        log("Comando de parada recebido.")
-        return True 
-    return False
-
-def sleep_interruptible(duration):
-    """Uma versão do time.sleep() que pode ser interrompida."""
-    start_time = time.time()
-    while time.time() - start_time < duration:
-        if check_for_stop():
-            return True 
-        time.sleep(0.05)
-    return False 
 
 def avoid_obstacle(gyro_bias_z):
     """
@@ -89,6 +69,22 @@ def avoid_obstacle(gyro_bias_z):
     log('Desvio feito! Procurando a linha')
     #motors.run(150, 150)
 
+def check_for_stop():
+    """Função auxiliar para verificar e reagir à parada."""
+    if not constants.robot_running:
+        motors.stop_motor()
+        log("Comando de parada recebido.")
+        return True 
+    return False
+
+def sleep_interruptible(duration):
+    """Uma versão do time.sleep() que pode ser interrompida."""
+    start_time = time.time()
+    while time.time() - start_time < duration:
+        if check_for_stop():
+            return True 
+        time.sleep(0.05)
+    return False 
 
 def led_feedback(led, times=1):
     """
@@ -146,7 +142,7 @@ def calculate_PID(error, previous_error, Kp, Kd, Ki, pid_state):
     Returns:
         int: The computed PID output.
     """
-    P = 0; A = 0;
+    P = 0; A = 0
     if error is not None:
         # posicional error
         P = error[0]
@@ -209,7 +205,7 @@ def try_comeback_line(move_function, get_current_img, duration=1.5):
     """
     # stop the motors
     motors.stop_motor()
-    time.sleep(0.3)
+    if sleep_interruptible(0.3): return False
 
     # count the start time 
     start_time = time.time()
@@ -318,12 +314,12 @@ def turn_90(turn_function, gyro_bias_z, get_current_img):
         get_current_img (function): A function that returns the current camera image for line detection.
     """
     if verify_lost_line(get_current_img, timeout=1.0):
-        time.sleep(0.4)
+        if sleep_interruptible(0.4): return
 
         print('parei pra virar')
         # stop the motors: 2 move
         motors.stop_motor()
-        time.sleep(0.5)
+        if sleep_interruptible(0.5): return
 
         # turn on the side 
         turn_function(curve_velocity, curve_velocity)
@@ -351,14 +347,15 @@ def do_dead_end(gyro_bias_z):
     
     # stop to syc the motors
     motors.stop_motor()
-    time.sleep(0.2)
+    if sleep_interruptible(0.2): return
 
     # turn on right again to finsish 180 curve
     motors.turn_right(curve_velocity, curve_velocity)
     turn_until_angle(90, gyro_bias_z)
     if check_for_stop(): return
+
     motors.stop_motor()
-    time.sleep(0.2)
+    if sleep_interruptible(0.2): return
 
 def turn_until_angle(target_angle=90, gyro_bias_z=0):
     """
@@ -379,7 +376,7 @@ def turn_until_angle(target_angle=90, gyro_bias_z=0):
 
     while abs(angle_z) < target_angle:
         if not constants.robot_running:
-            angular_velocity = target_angle
+ #           angular_velocity = target_angle + 0.01
             motors.stop_motor()
             log("parada de emergencia")
             return
@@ -402,7 +399,7 @@ def turn_until_angle(target_angle=90, gyro_bias_z=0):
     
     motors.stop_motor()
     print('Rotation finished')
-    time.sleep(0.5)
+    if sleep_interruptible(0.5): return
     
 def measure_distance():
     """
@@ -493,6 +490,8 @@ def read_accelerometer():
 """
 Rescue area
 """
+"""
+
 def rescue_area(cam):
     # joining on the rescue area
     motors.run(base_right_velocity, base_left_velocity)
@@ -543,9 +542,9 @@ def rescue_area(cam):
             break
 
 def catch_balls_on_rescue_area(img):
-    """
+
     Not implemented yet!
-    """
+
     
     # find the balls on the area
     ball_colour, (x, y) = find_ball(img)
@@ -581,9 +580,9 @@ def catch_balls_on_rescue_area(img):
     # basket_color, basket_position = find_basket(img)
 
 def search_balls_on_rescue_area(img, start_search):
-    """
+
     Searching the balls on rescue area
-    """
+
 
     # turn trying to find the balls
     motors.run(-base_right_velocity, base_left_velocity)
@@ -611,6 +610,7 @@ def search_balls_on_rescue_area(img, start_search):
 
     # return the ball wasn't found and start_search time
     return False, start_search 
+"""
 
 if __name__ == "__main__":
     pass
