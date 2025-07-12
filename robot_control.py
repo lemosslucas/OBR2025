@@ -2,14 +2,13 @@ import numpy as np
 import cv2
 import time
 
-from constants import (base_left_velocity,
-                       base_right_velocity,velocity_ramp,
+from constants import (base_left_velocity, base_right_velocity,
                        servo_arm, servo_shovel, robot_position_x, curve_velocity,
                        BALL_FOUND, BALL_NOT_FOUND, BALLS_SAVED, MIN_DISTANCE_BALL,
-                       TRIG, ECHO, ERROR, FRAMES_TO_LOST, MIN_RECOVERY_AREA)
+                       ERROR, FRAMES_TO_LOST, MIN_RECOVERY_AREA)
 import constants
 
-from hardware_setup import motors, pi, accelerometer
+from hardware_setup import motors, pi, accelerometer, TRIG, ECHO
 from ball_detection import find_ball
 from logger import log 
 from line_detection import detect_line
@@ -217,6 +216,10 @@ def try_comeback_line(move_function, get_current_img, duration=1.5):
     t = 0
 
     while time.time() - start_time < duration:
+        if check_for_stop():
+            log("Recuperação de linha interrompida pelo botão.")
+            return False
+        
         if t >= FRAMES_TO_LOST:
             return True
         print(f"tentativa {t}")
@@ -236,6 +239,7 @@ def try_comeback_line(move_function, get_current_img, duration=1.5):
     
     motors.stop_motor()
     return False
+
 """
 Accelerometer
 """
@@ -273,6 +277,10 @@ def verify_lost_line(get_current_img, timeout=5.0):
     while (time.time() - start_time) < timeout:
         erro, _, _, _ =  detect_line(get_current_img(), None)
 
+        if check_for_stop():
+            log("Verificação de linha perdida interrompida pelo botão.")
+            return False
+        
         # add a counter to avoid false-positive
         if erro is None:
             print(line_lost_count)
@@ -329,16 +337,17 @@ def do_dead_end(gyro_bias_z):
     """
     """
     # run 0.2 sec
-    time.sleep(0.2)
+    if sleep_interruptible(0.5): return
     log('beco sem saida')
   
     # turn 90 degre on right
     motors.turn_right(curve_velocity, curve_velocity)
     turn_until_angle(90, gyro_bias_z)
+    if check_for_stop(): return
   
     # run backward until find the line again
     motors.run_backward(base_right_velocity, base_left_velocity)
-    time.sleep(2)
+    if sleep_interruptible(2): return
     
     # stop to syc the motors
     motors.stop_motor()
@@ -347,6 +356,7 @@ def do_dead_end(gyro_bias_z):
     # turn on right again to finsish 180 curve
     motors.turn_right(curve_velocity, curve_velocity)
     turn_until_angle(90, gyro_bias_z)
+    if check_for_stop(): return
     motors.stop_motor()
     time.sleep(0.2)
 
@@ -369,6 +379,7 @@ def turn_until_angle(target_angle=90, gyro_bias_z=0):
 
     while abs(angle_z) < target_angle:
         if not constants.robot_running:
+            angular_velocity = target_angle
             motors.stop_motor()
             log("parada de emergencia")
             return
