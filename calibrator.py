@@ -20,7 +20,7 @@ img = None
 
 dynamic_color_ranges = {
     GREEN: {'lower': [35, 80, 35], 'upper': [70, 255, 255]},
-    RED:   {'lower': [119, 240, 75], 'upper': [121, 255, 220]},
+    RED:   {'lower': [119, 240, 60], 'upper': [121, 255, 220]},
     GRAY:  {'lower': [0, 0, 50], 'upper': [180, 50, 220]}
 }
 

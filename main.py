@@ -69,6 +69,7 @@ def toggle_robot_state(gpio, level, tick):
         log("Btn pressionado, parando")
         motors.stop_motor()
         red_led.on()
+        green_led.off()
 
 pi.callback(BTN_PIN, pigpio.FALLING_EDGE, toggle_robot_state)
 gyro_bias_z = calibrate_gyro(300)
@@ -91,10 +92,10 @@ def run_robot_control():
 
         # verify if has an object on front
         distance_tries = 0
-        distance = measure_distance()
+        distance = None
 
-        # read the distance 3 times
-        while distance_tries <= 3:
+        # read the distance 5 times
+        while distance_tries <= 5:
             distance = measure_distance()
             # verify if has error on the read
             if distance == ERROR:
@@ -106,7 +107,7 @@ def run_robot_control():
 
         log(f'Distance {distance:.2f} cm')
 
-        if distance is not None and distance <= MAX_DISTANCE:
+        if distance is not None and distance != ERROR and distance <= MAX_DISTANCE:
             log('Avoiding obstacle')
             avoid_obstacle(gyro_bias_z)
         

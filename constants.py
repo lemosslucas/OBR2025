@@ -21,7 +21,7 @@ TIME_OUT_SEARCH = 1
 DIFF_MOTOR = 0
 MIN_RECOVERY_AREA = 50
 FRAMES_TO_LOST = 5
-COLOR_OFFSET = 10
+COLOR_OFFSET = 15
 
 # constants for led signals
 LINE_LOST = 2
@@ -50,7 +50,7 @@ curve_velocity = 220
 # define the ramp slope and the upper on the motor to upper the ramp
 ramp_slope = 10
 velocity_ramp = 220
-velocity_ramp_down = 30
+velocity_ramp_down = 80
 
 """
 PID values
@@ -62,7 +62,7 @@ previous_error = 0
 """
 Computer Vision constants
 """
-threshold_value = 52
+threshold_value = 45
 # size of the image
 desired_width = 320
 desired_height = 240
