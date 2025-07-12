@@ -13,7 +13,7 @@ TIME_OUT_SEARCH = 1
 DIFF_MOTOR = 0
 MIN_RECOVERY_AREA = 50
 FRAMES_TO_LOST = 5
-COLOR_OFFSET = 0
+COLOR_OFFSET = 20
 
 # constants for led signals
 LINE_LOST = 2
@@ -35,8 +35,8 @@ DEAD_END = 2
 robot_position_x = 0
 
 #velocity
-base_right_velocity = 140
-base_left_velocity =  140
+base_right_velocity = 150
+base_left_velocity =  150
 curve_velocity = 220
 
 # define the ramp slope and the upper on the motor to upper the ramp
@@ -47,7 +47,7 @@ velocity_ramp_down = 80
 """
 PID values
 """
-Kp = 4; Ki = 0; Kd = 0; Ka = 0
+Kp = 4; Ki = 0; Kd = 0; Ka = 0.1
 pid_state = {'I': 0}
 previous_error = 0 
 
@@ -59,7 +59,7 @@ threshold_value = 45
 desired_width = 320
 desired_height = 240
 
-MIN_AREA_GREEN = 50
+MIN_AREA_GREEN = 40
 curve_threshold = 50
 
 def update_constants(kp=None, ki=None, kd=None, ka=None, threshold=None):

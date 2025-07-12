@@ -130,17 +130,18 @@ def run_robot_control():
             led_feedback(red_led, LINE_LOST)
 
             # try forward
-            if try_comeback_line(motors.run_backward, get_current_img, duration=1.0):
+            if try_comeback_line(motors.run_backward, get_current_img, duration=0.5):
                 led_feedback(green_led, LINE_FOUND)
                 continue 
                 
             # try turn right
-            if try_comeback_line(motors.turn_right, get_current_img, duration=2.0):
+            if try_comeback_line(motors.turn_right, get_current_img, duration=0.5):
                 led_feedback(green_led, LINE_FOUND) 
                 continue
 
             # try turn left
-            if try_comeback_line(motors.turn_left, get_current_img, duration=2.0):
+            if try_comeback_line(motors.turn_left, get_current_img, duration=1):
+                log("curva de busca")
                 led_feedback(green_led, LINE_FOUND)
                 continue
 
@@ -164,7 +165,7 @@ def run_robot_control():
                 if side_curve == LEFT:
                     log('90 degree turn on left')
                     motors.run(base_right_velocity, base_left_velocity)
-                    time.sleep(0.4)
+                    time.sleep(1.3)
                     motors.stop_motor()
                     motors.turn_left(curve_velocity, curve_velocity)
                     turn_until_angle(85, gyro_bias_z=gyro_bias_z)
@@ -178,6 +179,7 @@ def run_robot_control():
                     do_dead_end(gyro_bias_z)
 
             elif colour == RED:
+                time.sleep(1.8)
                 log('finish line')
                 # stop the car on the red line
                 motors.stop_motor()

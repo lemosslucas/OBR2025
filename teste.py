@@ -1,4 +1,4 @@
-from constants import servo_arm, servo_shovel, ERROR
+from constants import ERROR
 from hardware_setup import motors, green_led, red_led, pi 
 from time import  sleep
 

@@ -38,11 +38,14 @@ def avoid_obstacle(gyro_bias_z):
     motors.turn_left(right_velocity, left_velocity)
     turn_until_angle(90, gyro_bias_z=gyro_bias_z)
     if check_for_stop(): return
-    
+
     # state 4
     motors.run(right_velocity, left_velocity)
-    if sleep_interruptible(1.5): return
+    if sleep_interruptible(1.2): return
 
+    motors.stop_motor()
+    if sleep_interruptible(0.5): return
+    
     # state 5
     motors.turn_right(right_velocity, left_velocity)
     turn_until_angle(90, gyro_bias_z=gyro_bias_z)
@@ -50,11 +53,14 @@ def avoid_obstacle(gyro_bias_z):
 
     # state 6
     motors.run(right_velocity, left_velocity)
-    if sleep_interruptible(2): return
+    if sleep_interruptible(2.5): return
+
+    motors.stop_motor()
+    if sleep_interruptible(0.5): return
 
     # state 7
     motors.turn_right(right_velocity, left_velocity)
-    turn_until_angle(45, gyro_bias_z=gyro_bias_z)
+    turn_until_angle(90, gyro_bias_z=gyro_bias_z)
     if check_for_stop(): return
 
     # state 8
@@ -63,7 +69,7 @@ def avoid_obstacle(gyro_bias_z):
     
     #state 9
     motors.turn_left(right_velocity, left_velocity)
-    turn_until_angle(45, gyro_bias_z=gyro_bias_z)
+    turn_until_angle(90, gyro_bias_z=gyro_bias_z)
     if check_for_stop(): return
 
     motors.stop_motor()
