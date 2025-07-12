@@ -13,7 +13,7 @@ TIME_OUT_SEARCH = 1
 DIFF_MOTOR = 0
 MIN_RECOVERY_AREA = 50
 FRAMES_TO_LOST = 5
-COLOR_OFFSET = 15
+COLOR_OFFSET = 0
 
 # constants for led signals
 LINE_LOST = 2
@@ -35,8 +35,8 @@ DEAD_END = 2
 robot_position_x = 0
 
 #velocity
-base_right_velocity = 130
-base_left_velocity =  130
+base_right_velocity = 140
+base_left_velocity =  140
 curve_velocity = 220
 
 # define the ramp slope and the upper on the motor to upper the ramp

@@ -2,7 +2,7 @@ import cv2
 from line_detection import detect_line, process_image
 from robot_control import (measure_distance, avoid_obstacle, calibrate_gyro,
                            adjust_move, calculate_PID, led_feedback, turn_90, try_comeback_line,
-                           read_accelerometer, do_dead_end)
+                           read_accelerometer, do_dead_end, turn_until_angle)
 from logger import log
 from constants import *
 import constants
@@ -25,7 +25,7 @@ try:
     log('aguardando a inicializacao da camera')
     time.sleep(1)    
     log("Camera ligou")
-    green_led.on()
+#    green_led.on()
 except RuntimeError as e:
     log('Deu erro na camera')
     red_led.on()
@@ -130,7 +130,7 @@ def run_robot_control():
             led_feedback(red_led, LINE_LOST)
 
             # try forward
-            if try_comeback_line(motors.run_backward, get_current_img, duration=2):
+            if try_comeback_line(motors.run_backward, get_current_img, duration=1.0):
                 led_feedback(green_led, LINE_FOUND)
                 continue 
                 
@@ -163,7 +163,14 @@ def run_robot_control():
                 # turn on the correct side
                 if side_curve == LEFT:
                     log('90 degree turn on left')
-                    turn_90(motors.turn_left, gyro_bias_z, get_current_img)
+                    motors.run(base_right_velocity, base_left_velocity)
+                    time.sleep(0.4)
+                    motors.stop_motor()
+                    motors.turn_left(curve_velocity, curve_velocity)
+                    turn_until_angle(85, gyro_bias_z=gyro_bias_z)
+                    log("curva com cor feita")
+
+#                    turn_90(motors.turn_left, gyro_bias_z, get_current_img)
                 elif side_curve == RIGHT:
                     log('90 degree turn on right')
                     turn_90(motors.turn_right, gyro_bias_z, get_current_img)
@@ -214,6 +221,10 @@ if __name__ == '__main__':
     log("Iniciando a thread do feed da câmera...")
     camera_thread = Thread(target=update_camera_feed, daemon=True)
     camera_thread.start()
+
+#    camera_thread.stop()
+    
+    green_led.on()
 
     try:
         while True:

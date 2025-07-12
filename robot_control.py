@@ -59,13 +59,14 @@ def avoid_obstacle(gyro_bias_z):
 
     # state 8
     motors.run(right_velocity, left_velocity)
-    if sleep_interruptible(1.2): return
+    if sleep_interruptible(1): return
     
     #state 9
     motors.turn_left(right_velocity, left_velocity)
     turn_until_angle(45, gyro_bias_z=gyro_bias_z)
     if check_for_stop(): return
 
+    motors.stop_motor()
     log('Desvio feito! Procurando a linha')
     #motors.run(150, 150)
 
@@ -230,7 +231,7 @@ def try_comeback_line(move_function, get_current_img, duration=1.5):
             t+=1
             #return True
         
-        move_function(curve_velocity, curve_velocity)
+        move_function(curve_velocity-10, curve_velocity-10)
         time.sleep(0.05)
     
     motors.stop_motor()

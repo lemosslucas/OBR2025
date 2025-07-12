@@ -80,8 +80,8 @@ def identify_colour(img):
     color_ranges = {
         GREEN: [(np.array([44 - COLOR_OFFSET, 94 - COLOR_OFFSET, 140 - COLOR_OFFSET]), 
                  np.array([47 + COLOR_OFFSET, 122 + COLOR_OFFSET, 188 + COLOR_OFFSET]))],
-        RED: [(np.array([122 - COLOR_OFFSET, 203 - COLOR_OFFSET, 151 - COLOR_OFFSET]), 
-               np.array([126 + COLOR_OFFSET, 223 + COLOR_OFFSET, 227 + COLOR_OFFSET]))]
+        RED: [(np.array([117 - COLOR_OFFSET, 221 - COLOR_OFFSET, 64 - COLOR_OFFSET]), 
+               np.array([121 + COLOR_OFFSET, 255 + COLOR_OFFSET, 188 + COLOR_OFFSET]))]
 #        GRAY: [(np.array([0, 0, 50]), np.array([130, 60, 220]))]  # Gray
     }
     

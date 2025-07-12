@@ -23,7 +23,7 @@ red_led = LED(9)
 # BUTTON
 pi.set_mode(BTN_PIN, pigpio.INPUT)
 pi.set_pull_up_down(BTN_PIN, pigpio.PUD_UP)
-pi.set_glitch_filter(BTN_PIN, 10000)
+pi.set_glitch_filter(BTN_PIN, 5000)
 
 # ultrassonic
 try:
