@@ -2,8 +2,16 @@ import pigpio
 from gpiozero import LED
 from mpu6050 import mpu6050
 from motors import MotorController
-from constants import TRIG, ECHO, BTN_PIN
 from logger import log 
+
+"""
+Component's pins
+"""
+TRIG = 24
+ECHO = 23
+servo_arm = 14
+servo_shovel = 15
+BTN_PIN = 17
 
 # initalize the compontens
 pi = pigpio.pi()
@@ -24,16 +32,3 @@ try:
 except Exception as e:
     log(f'Error ao configurar o ultrassonico {e}')
 
-def disconnect_all_hardware():
-    """
-        Clean all components.
-    """
-    log('Componentes disconectados!')
-    motors.disconect() 
-    pi.stop() 
-
-    try:
-        green_led.close()
-        red_led.close()
-    except Exception as e:
-        log(f"Erro ao fechar LEDs: {e}")

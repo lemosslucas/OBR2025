@@ -1,12 +1,4 @@
-
-"""
-Component's pins
-"""
-TRIG = 24
-ECHO = 23
-servo_arm = 14
-servo_shovel = 15
-BTN_PIN = 17
+robot_running = False
 
 """
 Constant values

@@ -7,14 +7,13 @@ from logger import log
 from constants import *
 import constants
 import time
-from hardware_setup import red_led, green_led, motors, disconnect_all_hardware, pi
+from hardware_setup import red_led, green_led, motors, pi, BTN_PIN
 from threading import Thread
 
 from picamera2 import Picamera2
 import pigpio
 
-robot_running = False
-img = None
+img = None  
 
 # init the cam
 try:
@@ -57,12 +56,14 @@ def update_camera_feed():
             time.sleep(0.5)
 
 def toggle_robot_state(gpio, level, tick):
-    global robot_running
     # Inverte o estado (True -> False, False -> True)
-    robot_running = not robot_running 
+    constants.robot_running = not constants.robot_running 
     
-    if robot_running:
+    if constants.robot_running:
         log("Btn pressionado, ligando")
+        constants.previous_error = 0
+        constants.pid_state['I'] = 0
+        
         led_feedback(green_led, START_ROBOT)
         red_led.off()
     else:
@@ -72,16 +73,15 @@ def toggle_robot_state(gpio, level, tick):
         green_led.off()
 
 pi.callback(BTN_PIN, pigpio.FALLING_EDGE, toggle_robot_state)
-gyro_bias_z = calibrate_gyro(300)
-
+gyro_bias_z = calibrate_gyro(200)
 
 def run_robot_control():
     # define global variables
-    global robot_running, img
+    global img
     error_none = 0
 
     # loop to read the cam
-    while robot_running:
+    while constants.robot_running:
         red_led.off()
         
         # extract the cam info
@@ -146,7 +146,7 @@ def run_robot_control():
             log("Não foi possível recuperar a linha.")
             motors.stop_motor()
             red_led.on()
-            robot_running = False    
+            constants.robot_running = False    
             
 
         if has_colour is not None:
@@ -173,8 +173,7 @@ def run_robot_control():
                 log('finish line')
                 # stop the car on the red line
                 motors.stop_motor()
-                robot_running = False
-                disconnect_all_hardware()
+                constants.robot_running = False
                 # ALL it's run fine
                 break 
         
@@ -218,10 +217,8 @@ if __name__ == '__main__':
     try:
         while True:
             # if true, run the contol.
-            if robot_running:
+            if constants.robot_running:
                 run_robot_control()
 
     except KeyboardInterrupt:
         log("parei pelo teclado")
-#    finally:
-#        disconnect_all_hardware()

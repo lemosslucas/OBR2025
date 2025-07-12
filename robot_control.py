@@ -14,6 +14,23 @@ from ball_detection import find_ball
 from logger import log 
 from line_detection import detect_line
 
+def check_for_stop():
+    """Função auxiliar para verificar e reagir à parada."""
+    if not constants.robot_running:
+        motors.stop_motor()
+        log("Comando de parada recebido.")
+        return True 
+    return False
+
+def sleep_interruptible(duration):
+    """Uma versão do time.sleep() que pode ser interrompida."""
+    start_time = time.time()
+    while time.time() - start_time < duration:
+        if check_for_stop():
+            return True 
+        time.sleep(0.05)
+    return False 
+
 def avoid_obstacle(gyro_bias_z):
     """
     Executes a predefined sequence of movements to avoid an obstacle.
@@ -37,35 +54,39 @@ def avoid_obstacle(gyro_bias_z):
     
     # state 1
     motors.stop_motor()
-    time.sleep(0.5)
+    if sleep_interruptible(0.5): return
     
     motors.turn_left(right_velocity, left_velocity)
     turn_until_angle(90, gyro_bias_z=gyro_bias_z)
+    if check_for_stop(): return
     
     # state 4
     motors.run(right_velocity, left_velocity)
-    time.sleep(1.5)
+    if sleep_interruptible(1.5): return
 
     # state 5
     motors.turn_right(right_velocity, left_velocity)
     turn_until_angle(90, gyro_bias_z=gyro_bias_z)
+    if check_for_stop(): return
 
     # state 6
     motors.run(right_velocity, left_velocity)
-    time.sleep(2)
+    if sleep_interruptible(2): return
 
     # state 7
     motors.turn_right(right_velocity, left_velocity)
     turn_until_angle(45, gyro_bias_z=gyro_bias_z)
+    if check_for_stop(): return
 
     # state 8
     motors.run(right_velocity, left_velocity)
-    time.sleep(1.2)
+    if sleep_interruptible(1.2): return
     
     #state 9
     motors.turn_left(right_velocity, left_velocity)
     turn_until_angle(45, gyro_bias_z=gyro_bias_z)
-    
+    if check_for_stop(): return
+
     log('Desvio feito! Procurando a linha')
     #motors.run(150, 150)
 
@@ -347,6 +368,11 @@ def turn_until_angle(target_angle=90, gyro_bias_z=0):
     start_time = time.time()
 
     while abs(angle_z) < target_angle:
+        if not constants.robot_running:
+            motors.stop_motor()
+            log("parada de emergencia")
+            return
+        
         try:
             data = accelerometer.get_gyro_data()
             current_time = time.time()
