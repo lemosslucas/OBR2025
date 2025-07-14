@@ -303,6 +303,19 @@ def verify_lost_line(get_current_img, timeout=5.0):
     # line was not lost
     return False
 
+def turn_90_color(turn_function, gyro_bias_z, time_curve=1.3):
+    """
+    """
+    motors.run(base_right_velocity, base_left_velocity)
+    time.sleep(time_curve)
+
+    motors.stop_motor()
+    
+    motors.turn_function(curve_velocity, curve_velocity)
+    turn_until_angle(85, gyro_bias_z=gyro_bias_z)
+    
+    log("curva com cor feita")
+
 def turn_90(turn_function, gyro_bias_z, get_current_img):
     """
     Executes a 90-degree turn maneuver using a specified turn function and gyroscope feedback.
