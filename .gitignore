@@ -1,0 +1,16 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# Execution logs
+logs/*.txt
+!logs/.gitkeep
+
+# Temporary images
+templates/test.jpg
+test_frame_picamera2.jpg
